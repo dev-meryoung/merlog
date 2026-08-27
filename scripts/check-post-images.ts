@@ -11,8 +11,19 @@ type ImageIssue = {
 };
 
 const POSTS_DIR = path.join(process.cwd(), 'public', 'posts');
-const IMAGE_EXTENSIONS = new Set(['.avif', '.jpeg', '.jpg', '.png', '.webp']);
-const MAX_IMAGE_SIZE_KB = 5 * 1024;
+const IMAGE_EXTENSIONS = new Set([
+  '.avif',
+  '.bmp',
+  '.gif',
+  '.jpeg',
+  '.jpg',
+  '.png',
+  '.tif',
+  '.tiff',
+  '.webp',
+]);
+const REQUIRED_IMAGE_EXTENSION = '.webp';
+const MAX_IMAGE_SIZE_KB = 3 * 1024;
 const MAX_IMAGE_SIZE_BYTES = MAX_IMAGE_SIZE_KB * 1024;
 const isStrictMode = process.argv.includes('--strict');
 
@@ -67,6 +78,11 @@ const inspectImage = async (filePath: string): Promise<ImageIssue | null> => {
   ]);
   const dimensions = imageSize(fileBuffer);
   const issues: string[] = [];
+  const extension = path.extname(filePath).toLowerCase();
+
+  if (extension !== REQUIRED_IMAGE_EXTENSION) {
+    issues.push(`format ${extension} must be ${REQUIRED_IMAGE_EXTENSION}`);
+  }
 
   if (fileStat.size > MAX_IMAGE_SIZE_BYTES) {
     issues.push(
@@ -102,7 +118,7 @@ const main = async () => {
   }
 
   console.warn(
-    `Checked ${imageFiles.length} post image(s). ${issues.length} image(s) exceed the recommended limits.`
+    `Checked ${imageFiles.length} post image(s). ${issues.length} image(s) do not meet the requirements.`
   );
 
   issues.forEach((issue) => {
