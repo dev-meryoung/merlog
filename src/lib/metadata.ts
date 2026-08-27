@@ -15,7 +15,6 @@ const DEFAULT_KEYWORDS = [
   'Markdown',
   'Blog',
   'merlog',
-  'mer-log',
 ];
 
 const DEFAULT_IMAGE = {

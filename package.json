@@ -1,10 +1,10 @@
 {
-  "name": "mer-log",
+  "name": "merlog",
   "version": "0.1.0",
   "private": true,
   "packageManager": "npm@11.7.0",
   "engines": {
-    "node": ">=20.9.0"
+    "node": "24.x"
   },
   "scripts": {
     "dev": "npm run generate:posts && next dev --turbopack",
@@ -14,9 +14,13 @@
     "check:images": "tsx ./scripts/check-post-images.ts",
     "check:images:strict": "tsx ./scripts/check-post-images.ts --strict",
     "lint": "eslint . --fix",
-    "lint:check": "eslint .",
+    "lint:check": "eslint . --max-warnings=0",
     "typecheck": "tsc --noEmit --incremental false",
-    "verify": "npm run lint:check && npm run typecheck && npm run check:images && npm run build"
+    "test": "tsx --test tests/index.test.ts",
+    "check": "npm run lint:check && npm run typecheck && npm test && npm run check:images:strict && npm run build",
+    "verify": "npm run check",
+    "hooks:install": "lefthook install",
+    "setup:git": "git config --local commit.template .gitmessage.txt && npm run hooks:install"
   },
   "dependencies": {
     "@heroicons/react": "^2.2.0",
@@ -49,7 +53,7 @@
     "eslint": "^9.39.4",
     "eslint-config-next": "^15.5.19",
     "eslint-plugin-prettier": "^5.5.5",
-    "lefthook": "^2.0.15",
+    "lefthook": "2.1.10",
     "p-limit": "^7.2.0",
     "postcss": "^8.5.15",
     "prettier": "^3.8.4",
