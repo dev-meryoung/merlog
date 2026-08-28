@@ -7,7 +7,7 @@ export const SITE_CONFIG = {
   url: SITE_URL,
   author: {
     name: 'meryoung',
-    github: 'https://github.com/meryoung',
+    github: 'https://github.com/dev-meryoung',
   },
   logo: {
     light: '/images/logo-light.svg',

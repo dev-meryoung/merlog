@@ -7,9 +7,9 @@ interface TagListProps {
 
 const TagList: React.FC<TagListProps> = ({ allTags, selectedTag }) => (
   <div className='py-5'>
-    <h1 className='inline font-recipekorea text-2xl md:text-3xl font-bold dark:text-text-dark'>
+    <h2 className='inline font-recipekorea text-2xl md:text-3xl font-bold dark:text-text-dark'>
       TAGS
-    </h1>
+    </h2>
     {allTags.length > 0 ? (
       <div className='flex my-4 p-3 md:p-4 gap-1.5 md:gap-2 flex-wrap shadow-md bg-white rounded-lg dark:bg-darkActive'>
         {allTags.map((tag) => (

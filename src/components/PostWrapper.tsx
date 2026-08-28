@@ -1,5 +1,3 @@
-'use client';
-
 import React, { ReactElement } from 'react';
 import Image from 'next/image';
 import { MDXRemoteProps } from 'next-mdx-remote/rsc';
@@ -25,15 +23,15 @@ const PostWrapper = ({
   previousPost,
   nextPost,
 }: PostWrapperProps) => (
-  <div data-is-post-page='true'>
+  <div>
     <article className='w-full mx-auto p-5 md:p-10 rounded-lg bg-white shadow-md dark:bg-darkActive'>
       <div className='relative'>
         <IndexNavigation headings={headings} />
         <div>
-          <p className='text-2xl md:text-3xl lg:text-4xl font-bold mb-4 pl-0.5 dark:text-text-dark'>
+          <h1 className='text-2xl md:text-3xl lg:text-4xl font-bold mb-4 pl-0.5 dark:text-text-dark'>
             {postInfo.title}
-          </p>
-          <p className='text-sm md:text-[16px] text-gray-500 mb-4 pl-1'>
+          </h1>
+          <p className='text-sm md:text-[16px] text-gray-600 dark:text-gray-400 mb-4 pl-1'>
             {formatDate(postInfo.date)}
           </p>
           <ul className='pb-4 mb-4 border-b border-gray-200 dark:border-text-light'>

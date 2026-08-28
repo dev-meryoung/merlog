@@ -6,8 +6,7 @@
   body,
   header,
   footer,
-  article,
-  div {
+  article {
     @apply transition-[background-color,border-color,box-shadow,transform] duration-300 ease-in-out;
   }
 
@@ -16,7 +15,18 @@
   }
 
   .dark ::selection {
-    @apply bg-blue-700 text-text-dark;
+    @apply bg-accent-contrastSurface text-text-dark;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
   }
 }
 
@@ -26,7 +36,16 @@ html {
 
 body {
   @apply bg-background-light text-text-light;
-  font-family: var(--font-suit), sans-serif;
+  font-family:
+    var(--font-wanted-sans),
+    -apple-system,
+    BlinkMacSystemFont,
+    system-ui,
+    'Segoe UI',
+    'Apple SD Gothic Neo',
+    'Noto Sans KR',
+    'Malgun Gothic',
+    sans-serif;
 }
 
 .prose code::before,

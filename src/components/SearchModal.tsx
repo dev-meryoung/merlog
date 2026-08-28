@@ -16,6 +16,11 @@ const SearchModal: React.FC<SearchModalProps> = ({ isModalOpen, onClose }) => {
   const modalRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const previousActiveElementRef = useRef<HTMLElement | null>(null);
+  const onCloseRef = useRef(onClose);
+
+  useEffect(() => {
+    onCloseRef.current = onClose;
+  }, [onClose]);
 
   useEffect(() => {
     if (isModalOpen) {
@@ -26,7 +31,7 @@ const SearchModal: React.FC<SearchModalProps> = ({ isModalOpen, onClose }) => {
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
-        onClose();
+        onCloseRef.current();
         return;
       }
 
@@ -73,7 +78,7 @@ const SearchModal: React.FC<SearchModalProps> = ({ isModalOpen, onClose }) => {
       previousActiveElementRef.current?.focus();
       previousActiveElementRef.current = null;
     };
-  }, [isModalOpen, onClose]);
+  }, [isModalOpen]);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -107,7 +112,7 @@ const SearchModal: React.FC<SearchModalProps> = ({ isModalOpen, onClose }) => {
         <div className='relative flex justify-center items-center h-16 select-none'>
           <Image
             src='/images/logo-light.svg'
-            alt='logo'
+            alt=''
             width={150}
             height={100}
             className='w-[150px] h-[50px] block dark:hidden'
@@ -116,7 +121,7 @@ const SearchModal: React.FC<SearchModalProps> = ({ isModalOpen, onClose }) => {
           />
           <Image
             src='/images/logo-dark.svg'
-            alt='dark logo'
+            alt=''
             width={150}
             height={100}
             className='w-[150px] h-[50px] hidden dark:block'

@@ -1,14 +1,64 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
+import { buildHeadingTree, type HeadingNode } from '@/lib/headings';
+import type { Heading } from '@/types/post';
 
 interface IndexNavigationProps {
-  headings: { id: string; text: string; level: number }[];
+  headings: Heading[];
 }
+
+interface HeadingListProps {
+  activeId: string | null;
+  depth?: number;
+  nodes: HeadingNode[];
+  onSelect: (id: string) => void;
+}
+
+const HeadingList = ({
+  activeId,
+  depth = 0,
+  nodes,
+  onSelect,
+}: HeadingListProps) => (
+  <ul className={depth === 0 ? 'space-y-2' : 'mt-2 ml-1 space-y-2'}>
+    {nodes.map((node) => (
+      <li
+        key={node.id}
+        className={
+          depth === 0
+            ? undefined
+            : 'relative pl-4 before:absolute before:left-0 before:-top-2 before:-bottom-2 before:border-l before:border-gray-300 last:before:bottom-auto last:before:h-[18px] after:absolute after:left-0 after:top-2.5 after:w-3 after:border-t after:border-gray-300 dark:before:border-gray-600 dark:after:border-gray-600'
+        }
+      >
+        <button
+          type='button'
+          onClick={() => onSelect(node.id)}
+          className={`block text-left w-full leading-5 ${
+            activeId === node.id
+              ? 'text-accent font-bold dark:text-accent-contrast'
+              : 'text-gray-700 dark:text-text-dark'
+          } hover:underline`}
+          aria-current={activeId === node.id ? 'location' : undefined}
+        >
+          {node.text}
+        </button>
+        {node.children.length > 0 && (
+          <HeadingList
+            activeId={activeId}
+            depth={depth + 1}
+            nodes={node.children}
+            onSelect={onSelect}
+          />
+        )}
+      </li>
+    ))}
+  </ul>
+);
 
 const IndexNavigation = ({ headings }: IndexNavigationProps) => {
   const [activeId, setActiveId] = useState<string | null>(null);
-  const HEADER_OFFSET = 70;
+  const HEADER_OFFSET = 74;
 
   const handleClick = (id: string) => {
     const element = document.getElementById(id);
@@ -16,7 +66,14 @@ const IndexNavigation = ({ headings }: IndexNavigationProps) => {
     if (element) {
       const position =
         element.getBoundingClientRect().top + window.scrollY - HEADER_OFFSET;
-      window.scrollTo({ top: position, behavior: 'smooth' });
+      const prefersReducedMotion = window.matchMedia(
+        '(prefers-reduced-motion: reduce)'
+      ).matches;
+
+      window.scrollTo({
+        top: position,
+        behavior: prefersReducedMotion ? 'auto' : 'smooth',
+      });
     }
   };
 
@@ -50,68 +107,46 @@ const IndexNavigation = ({ headings }: IndexNavigationProps) => {
   }, [headings]);
 
   useEffect(() => {
-    headings.forEach(({ id }) => {
-      const element = document.getElementById(id);
-
-      if (!element) {
+    let animationFrame: number | null = null;
+    const scheduleScrollUpdate = () => {
+      if (animationFrame !== null) {
         return;
       }
 
-      element.id = id;
-    });
-  }, [headings]);
-
-  useEffect(() => {
-    window.addEventListener('scroll', handleScroll);
-    handleScroll();
-
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, [handleScroll]);
-
-  const [showNav, setShowNav] = useState<boolean>(true);
-
-  useEffect(() => {
-    const handleResize = () => {
-      setShowNav(window.innerWidth >= 1620);
+      animationFrame = window.requestAnimationFrame(() => {
+        animationFrame = null;
+        handleScroll();
+      });
     };
 
-    handleResize();
-    window.addEventListener('resize', handleResize);
+    scheduleScrollUpdate();
+    window.addEventListener('scroll', scheduleScrollUpdate, { passive: true });
 
-    return () => window.removeEventListener('resize', handleResize);
-  }, []);
+    return () => {
+      if (animationFrame !== null) {
+        window.cancelAnimationFrame(animationFrame);
+      }
+      window.removeEventListener('scroll', scheduleScrollUpdate);
+    };
+  }, [handleScroll]);
 
-  if (!showNav || headings.length === 0) {
+  if (headings.length === 0) {
     return null;
   }
 
-  const minLevel = Math.min(...headings.map((h) => h.level));
+  const headingTree = buildHeadingTree(headings);
 
   return (
-    <nav className='absolute left-[968px] top-0 h-full'>
-      <div className='sticky top-20 min-w-[284px] p-4 bg-white dark:bg-darkActive shadow-md rounded-lg'>
-        <ul className='space-y-2'>
-          {headings.map((heading) => {
-            const indentLevel = heading.level - minLevel;
-            const indentClass =
-              indentLevel === 0 ? 'pl-0' : indentLevel === 1 ? 'pl-2' : 'pl-4';
-
-            return (
-              <li key={heading.id} className={indentClass}>
-                <button
-                  onClick={() => handleClick(heading.id)}
-                  className={`text-left w-full ${
-                    activeId === heading.id
-                      ? 'text-secondary font-bold dark:text-blue-700'
-                      : 'text-gray-700 dark:text-text-dark'
-                  } hover:underline`}
-                >
-                  {heading.text}
-                </button>
-              </li>
-            );
-          })}
-        </ul>
+    <nav
+      className='hidden min-[1620px]:block absolute left-[968px] top-0 h-full'
+      aria-label='목차'
+    >
+      <div className='sticky top-20 max-h-[calc(100vh-6rem)] min-w-[284px] overflow-y-auto p-4 bg-white dark:bg-darkActive shadow-md rounded-lg'>
+        <HeadingList
+          activeId={activeId}
+          nodes={headingTree}
+          onSelect={handleClick}
+        />
       </div>
     </nav>
   );

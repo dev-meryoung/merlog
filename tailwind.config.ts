@@ -11,12 +11,18 @@ export default {
   theme: {
     extend: {
       fontFamily: {
-        suit: ['var(--font-suit)', 'sans-serif'],
+        wanted: ['var(--font-wanted-sans)', 'sans-serif'],
         recipekorea: ['var(--font-recipekorea)', 'sans-serif'],
       },
       colors: {
         primary: '#233067',
         secondary: '#38427b',
+        accent: {
+          DEFAULT: '#38427b',
+          contrast: '#6485da',
+          contrastHover: '#829ee8',
+          contrastSurface: '#4567c5',
+        },
         darkActive: '#171717',
         background: {
           light: '#f5f5f5',
@@ -30,7 +36,6 @@ export default {
       container: {
         center: true,
         screens: {
-          sm: '100%',
           md: '800px',
           lg: '1024px',
         },
@@ -87,7 +92,7 @@ export default {
             blockquote: {
               fontStyle: 'italic',
               color: theme('colors.gray.700'),
-              borderLeft: `4px solid ${theme('colors.secondary')}`,
+              borderLeft: `4px solid ${theme('colors.accent.DEFAULT')}`,
               padding: '0 1rem',
               margin: '1.5rem 0',
               'p::before': { content: 'none' },
@@ -109,13 +114,13 @@ export default {
           css: {
             color: theme('colors.text.dark'),
             a: {
-              color: theme('colors.secondary'),
+              color: theme('colors.accent.contrast'),
               '&:hover': {
-                color: theme('colors.primary'),
+                color: theme('colors.accent.contrastHover'),
               },
             },
             blockquote: {
-              borderLeftColor: theme('colors.blue.600'),
+              borderLeftColor: theme('colors.accent.contrastSurface'),
               color: theme('colors.gray.300'),
             },
             h1: {

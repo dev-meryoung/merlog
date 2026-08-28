@@ -6,14 +6,16 @@ import Footer from '@/components/Footer';
 import Header from '@/components/Header';
 import { defaultMetadata } from '@/lib/metadata';
 
-const suit = localFont({
-  src: '../../public/fonts/Suit.woff2',
-  variable: '--font-suit',
+const wantedSans = localFont({
+  src: '../../public/fonts/WantedSansVariable.woff2',
+  variable: '--font-wanted-sans',
+  weight: '400 1000',
 });
 
 const recipekorea = localFont({
   src: '../../public/fonts/Recipekorea.ttf',
   variable: '--font-recipekorea',
+  preload: false,
 });
 
 export const generateMetadata = async (): Promise<Metadata> =>
@@ -26,7 +28,7 @@ const RootLayout = ({
 }>) => (
   <html
     lang='ko'
-    className={`${suit.variable} ${recipekorea.variable}`}
+    className={`${wantedSans.variable} ${recipekorea.variable}`}
     suppressHydrationWarning={true}
   >
     <head>
