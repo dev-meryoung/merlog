@@ -1,7 +1,11 @@
 import path from 'node:path';
 import Image from 'next/image';
 import { getImageData } from '@/lib/images';
-import { resolvePostImage } from '@/lib/post-images';
+import {
+  POST_IMAGE_QUALITY,
+  POST_IMAGE_SIZES,
+  resolvePostImage,
+} from '@/lib/post-images';
 
 interface MDXImageProps {
   src: string;
@@ -30,7 +34,8 @@ const MDXImage = async ({
       alt={alt}
       width={width}
       height={height}
-      sizes='(max-width: 800px) calc(100vw - 72px), 720px'
+      sizes={POST_IMAGE_SIZES}
+      quality={POST_IMAGE_QUALITY}
       className='max-w-full h-auto object-cover rounded-lg'
       placeholder='blur'
       blurDataURL={blurDataURL}

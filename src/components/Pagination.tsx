@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { getPaginationGroup } from '@/utils/pageUtils';
+import { getPaginationGroup } from '@/utils/paginationUtils';
 
 interface PaginationProps {
   currentPage: number;
@@ -16,14 +16,9 @@ const Pagination: React.FC<PaginationProps> = ({
 }) => {
   const safeCurrentPage = Math.max(1, Math.min(currentPage, totalPages));
   const paginationGroup = getPaginationGroup(safeCurrentPage, totalPages);
-
-  const groupSize = 5;
-  const currentGroupStart =
-    Math.floor((safeCurrentPage - 1) / groupSize) * groupSize + 1;
-  const currentGroupEnd = Math.min(
-    currentGroupStart + groupSize - 1,
-    totalPages
-  );
+  const currentGroupStart = paginationGroup[0] ?? 1;
+  const currentGroupEnd =
+    paginationGroup[paginationGroup.length - 1] ?? totalPages;
 
   const baseLinkClasses =
     'px-2.5 py-1 text-sm md:text-[16px] md:px-3 md:py-1 border border-gray-300 rounded dark:border-gray-500';

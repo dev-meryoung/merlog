@@ -1,8 +1,11 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 import type { PostInfo } from '@/types/post';
-import { getPaginationGroup } from '@/utils/pageUtils';
-import { getPaginatedPosts, getTotalPages } from '@/utils/paginationUtils';
+import {
+  getPaginatedPosts,
+  getPaginationGroup,
+  getTotalPages,
+} from '@/utils/paginationUtils';
 
 const posts = Array.from({ length: 6 }, (_, index): PostInfo => ({
   title: `글 ${index + 1}`,

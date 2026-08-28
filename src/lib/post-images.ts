@@ -3,6 +3,9 @@ import path from 'node:path';
 export const REQUIRED_IMAGE_EXTENSION = '.webp';
 export const MAX_IMAGE_SIZE_BYTES = 3 * 1024 * 1024;
 export const MAX_IMAGE_SIZE_KB = 3 * 1024;
+export const POST_IMAGE_QUALITY = 90;
+export const POST_IMAGE_SIZES =
+  '(max-width: 767px) calc(100vw - 4.5rem), (max-width: 799px) calc(100vw - 7rem), (max-width: 1023px) calc(800px - 7rem), calc(1024px - 7rem)';
 export const GENERATED_POST_IMAGES_DIRECTORY = 'generated-post-images';
 export const CONVERTIBLE_IMAGE_EXTENSIONS = [
   '.avif',
