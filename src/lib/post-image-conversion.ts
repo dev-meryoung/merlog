@@ -9,7 +9,7 @@ import {
 } from './post-images';
 
 const CONVERTIBLE_EXTENSIONS = new Set<string>(CONVERTIBLE_IMAGE_EXTENSIONS);
-const WEBP_QUALITIES = [82, 74, 66, 58, 50];
+const WEBP_QUALITIES = [90, 86, 82, 74, 66, 58, 50];
 
 export type PreparePostImagesResult = {
   converted: number;

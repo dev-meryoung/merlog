@@ -1,6 +1,7 @@
 import React, { ReactElement } from 'react';
 import Image from 'next/image';
 import { MDXRemoteProps } from 'next-mdx-remote/rsc';
+import { POST_IMAGE_QUALITY, POST_IMAGE_SIZES } from '@/lib/post-images';
 import { PostInfo, Heading } from '@/types/post';
 import { formatDate } from '@/utils/dateUtils';
 import Comments from './Comments';
@@ -49,6 +50,8 @@ const PostWrapper = ({
             className='w-full h-full object-cover'
             width={1280}
             height={720}
+            sizes={POST_IMAGE_SIZES}
+            quality={POST_IMAGE_QUALITY}
             placeholder='blur'
             blurDataURL={postInfo.blurDataURL}
             priority
