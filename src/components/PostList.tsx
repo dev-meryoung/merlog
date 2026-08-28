@@ -8,7 +8,6 @@ interface PostListProps {
   totalPages: number;
   basePath?: string;
   getPageHref?: (page: number) => string;
-  onPageChange?: (page: number) => void;
 }
 
 const PostList: React.FC<PostListProps> = ({
@@ -17,12 +16,11 @@ const PostList: React.FC<PostListProps> = ({
   totalPages,
   basePath = '',
   getPageHref,
-  onPageChange,
 }) => (
   <div className='py-2 md:py-5'>
-    <h1 className='inline font-recipekorea text-2xl md:text-3xl font-bold dark:text-text-dark'>
+    <h2 className='inline font-recipekorea text-2xl md:text-3xl font-bold dark:text-text-dark'>
       POSTS
-    </h1>
+    </h2>
     {posts.length > 0 ? (
       <div className='flex py-4 gap-8 flex-wrap'>
         {posts.map((post, index) => (
@@ -43,7 +41,6 @@ const PostList: React.FC<PostListProps> = ({
         totalPages={totalPages}
         basePath={basePath}
         getPageHref={getPageHref}
-        onPageChange={onPageChange}
       />
     )}
   </div>

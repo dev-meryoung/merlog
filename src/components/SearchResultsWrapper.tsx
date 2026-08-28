@@ -1,102 +1,43 @@
 import { redirect } from 'next/navigation';
 import SearchResults from '@/components/SearchResults';
-import { POSTS_PER_PAGE } from '@/constants';
 import { getAllPosts, getAllSearchPosts } from '@/lib/posts';
-import type { PostSearchData } from '@/types/post';
+import {
+  getSearchPath,
+  matchesSearchKeyword,
+  parseSearchRequest,
+  type SearchQuery,
+} from '@/lib/search';
+import { getPaginatedPosts, getTotalPages } from '@/utils/paginationUtils';
 
 interface SearchResultsWrapperProps {
-  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
+  searchParams: Promise<SearchQuery>;
 }
 
 export type SearchResultsData = {
   filteredPosts: Awaited<ReturnType<typeof getAllPosts>>;
   keyword: string;
   currentPage: number;
-  normalizedHref?: string;
-};
-
-const normalizeSearchValue = (value: string): string => value.toLowerCase();
-
-const getSearchUrl = (keyword: string, page = 1): string => {
-  const params = new URLSearchParams();
-
-  if (keyword) {
-    params.set('keyword', keyword);
-  }
-
-  if (page > 1) {
-    params.set('page', page.toString());
-  }
-
-  const queryString = params.toString();
-  return queryString ? `/search?${queryString}` : '/search';
-};
-
-const parsePageParam = (
-  page: string | string[] | undefined
-): { page: number; shouldNormalize: boolean } => {
-  const pageString = Array.isArray(page) ? page[0] : page;
-
-  if (pageString === undefined) {
-    return {
-      page: 1,
-      shouldNormalize: false,
-    };
-  }
-
-  if (!/^[1-9]\d*$/.test(pageString)) {
-    return {
-      page: 1,
-      shouldNormalize: true,
-    };
-  }
-
-  const parsedPage = Number(pageString);
-
-  return {
-    page: parsedPage,
-    shouldNormalize: parsedPage === 1,
-  };
-};
-
-const matchesKeyword = (post: PostSearchData, keyword: string): boolean => {
-  const searchableValues = [
-    post.title,
-    post.description,
-    post.content,
-    ...post.tags,
-  ];
-
-  return searchableValues.some((value) =>
-    normalizeSearchValue(value).includes(keyword)
-  );
+  totalPages: number;
+  totalResults: number;
 };
 
 export const getSearchResultsData = async (
   searchParams: SearchResultsWrapperProps['searchParams']
 ): Promise<SearchResultsData> => {
-  const { keyword, page } = await searchParams;
-  const keywordString = Array.isArray(keyword) ? keyword[0] : keyword;
-  const trimmedKeyword = keywordString?.trim() || '';
-  const { page: parsedPage, shouldNormalize: shouldNormalizePage } =
-    parsePageParam(page);
-  let currentPage = parsedPage;
-  let normalizedHref: string | undefined;
+  const request = parseSearchRequest(await searchParams);
 
-  if (!trimmedKeyword) {
-    if (keyword !== undefined || page !== undefined) {
-      redirect('/search');
-    }
+  if (request.redirectTo) {
+    redirect(request.redirectTo);
+  }
 
+  if (!request.keyword) {
     return {
       filteredPosts: [],
       keyword: '',
       currentPage: 1,
+      totalPages: 0,
+      totalResults: 0,
     };
-  }
-
-  if (shouldNormalizePage) {
-    redirect(getSearchUrl(trimmedKeyword));
   }
 
   const [searchPosts, allPosts] = await Promise.all([
@@ -104,45 +45,44 @@ export const getSearchResultsData = async (
     getAllPosts(),
   ]);
 
-  const normalizedKeyword = normalizeSearchValue(trimmedKeyword);
-
   const matchedSlugs = new Set(
     searchPosts
-      .filter((post) => matchesKeyword(post, normalizedKeyword))
+      .filter((post) => matchesSearchKeyword(post, request.keyword))
       .map((post) => post.slug)
   );
 
-  const filteredPosts = allPosts.filter((post) => matchedSlugs.has(post.slug));
-  const totalPages = Math.ceil(filteredPosts.length / POSTS_PER_PAGE);
+  const matchedPosts = allPosts.filter((post) => matchedSlugs.has(post.slug));
+  const totalPages = getTotalPages(matchedPosts.length);
 
   if (
-    (totalPages === 0 && currentPage > 1) ||
-    (totalPages > 0 && currentPage > totalPages)
+    (totalPages === 0 && request.page > 1) ||
+    (totalPages > 0 && request.page > totalPages)
   ) {
-    currentPage = 1;
-    normalizedHref = getSearchUrl(trimmedKeyword);
+    redirect(getSearchPath(request.keyword));
   }
 
   return {
-    filteredPosts,
-    keyword: trimmedKeyword,
-    currentPage,
-    normalizedHref,
+    filteredPosts: getPaginatedPosts(matchedPosts, request.page),
+    keyword: request.keyword,
+    currentPage: request.page,
+    totalPages,
+    totalResults: matchedPosts.length,
   };
 };
 
 const SearchResultsWrapper = async ({
   searchParams,
 }: SearchResultsWrapperProps) => {
-  const { filteredPosts, keyword, currentPage, normalizedHref } =
+  const { filteredPosts, keyword, currentPage, totalPages, totalResults } =
     await getSearchResultsData(searchParams);
 
   return (
     <SearchResults
-      initialPosts={filteredPosts}
+      posts={filteredPosts}
       keyword={keyword}
       currentPage={currentPage}
-      normalizedHref={normalizedHref}
+      totalPages={totalPages}
+      totalResults={totalResults}
     />
   );
 };

@@ -4,19 +4,15 @@ import type { PostInfo } from '@/types/post';
 import { getPaginationGroup } from '@/utils/pageUtils';
 import { getPaginatedPosts, getTotalPages } from '@/utils/paginationUtils';
 
-const posts = Array.from(
-  { length: 6 },
-  (_, index): PostInfo => ({
-    title: `글 ${index + 1}`,
-    description: '',
-    date: '2026-01-01',
-    tags: [],
-    thumbnail: '/images/thumbnail.png',
-    slug: `post-${index + 1}`,
-    blurDataURL: '',
-    summary: '',
-  })
-);
+const posts = Array.from({ length: 6 }, (_, index): PostInfo => ({
+  title: `글 ${index + 1}`,
+  description: '',
+  date: '2026-01-01',
+  tags: [],
+  thumbnail: '/images/thumbnail.png',
+  slug: `post-${index + 1}`,
+  blurDataURL: '',
+}));
 
 describe('pagination utilities', () => {
   it('calculates total pages from the configured page size', () => {
