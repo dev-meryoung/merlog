@@ -30,13 +30,13 @@ const PostCard: React.FC<PostCardProps> = ({ post, priority = false }) => {
         />
       </div>
       <div className='relative flex flex-col w-full min-h-[164px] p-4 md:min-h-[188px] md:w-2/3 md:px-8 md:py-6 gap-2 flex-grow'>
-        <h2 className='font-bold text-lg md:text-xl lg:text-2xl line-clamp-2 group-hover:text-secondary dark:group-hover:text-blue-700 dark:text-text-dark relative z-0'>
+        <h2 className='font-bold text-lg md:text-xl lg:text-2xl line-clamp-2 group-hover:text-accent dark:group-hover:text-accent-contrastHover dark:text-text-dark relative z-0'>
           {title}
         </h2>
         <p className='line-clamp-2 text-sm md:text-[16px] text-gray-600 dark:text-gray-300 relative z-0'>
           {description}
         </p>
-        <p className='mt-auto text-xs md:text-sm text-gray-500 dark:text-gray-500 relative z-0'>
+        <p className='mt-auto text-xs md:text-sm text-gray-600 dark:text-gray-400 relative z-0'>
           {formatDate(date)}
         </p>
       </div>

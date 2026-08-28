@@ -6,7 +6,6 @@ interface PaginationProps {
   totalPages: number;
   basePath: string;
   getPageHref?: (page: number) => string;
-  onPageChange?: (page: number) => void;
 }
 
 const Pagination: React.FC<PaginationProps> = ({
@@ -14,7 +13,6 @@ const Pagination: React.FC<PaginationProps> = ({
   totalPages,
   basePath,
   getPageHref,
-  onPageChange,
 }) => {
   const safeCurrentPage = Math.max(1, Math.min(currentPage, totalPages));
   const paginationGroup = getPaginationGroup(safeCurrentPage, totalPages);
@@ -30,7 +28,8 @@ const Pagination: React.FC<PaginationProps> = ({
   const baseLinkClasses =
     'px-2.5 py-1 text-sm md:text-[16px] md:px-3 md:py-1 border border-gray-300 rounded dark:border-gray-500';
   const disabledClasses = 'opacity-50 cursor-not-allowed';
-  const activeClasses = 'bg-secondary text-text-dark dark:bg-blue-700';
+  const activeClasses =
+    'bg-accent text-text-dark dark:bg-accent-contrastSurface dark:text-text-dark';
 
   const getPageLink = (page: number) => {
     if (getPageHref) {
@@ -39,13 +38,6 @@ const Pagination: React.FC<PaginationProps> = ({
 
     const cleanBasePath = basePath.replace(/\/$/, '');
     return page === 1 ? cleanBasePath || '/' : `${cleanBasePath}/page/${page}`;
-  };
-
-  const handleClick = (e: React.MouseEvent, page: number) => {
-    if (onPageChange) {
-      e.preventDefault();
-      onPageChange(page);
-    }
   };
 
   if (totalPages <= 1) return null;
@@ -59,11 +51,6 @@ const Pagination: React.FC<PaginationProps> = ({
         <Link
           href={getPageLink(1)}
           className={`${baseLinkClasses} ${safeCurrentPage === 1 ? disabledClasses : ''}`}
-          onClick={(e) => {
-            if (safeCurrentPage === 1) e.preventDefault();
-            else handleClick(e, 1);
-          }}
-          aria-disabled={safeCurrentPage === 1}
         >
           처음
         </Link>
@@ -77,7 +64,6 @@ const Pagination: React.FC<PaginationProps> = ({
         <Link
           href={getPageLink(currentGroupStart - 1)}
           className={baseLinkClasses}
-          onClick={(e) => handleClick(e, currentGroupStart - 1)}
         >
           이전
         </Link>
@@ -97,12 +83,7 @@ const Pagination: React.FC<PaginationProps> = ({
             {page}
           </span>
         ) : (
-          <Link
-            key={page}
-            href={getPageLink(page)}
-            className={baseLinkClasses}
-            onClick={(e) => handleClick(e, page)}
-          >
+          <Link key={page} href={getPageLink(page)} className={baseLinkClasses}>
             {page}
           </Link>
         )
@@ -112,7 +93,6 @@ const Pagination: React.FC<PaginationProps> = ({
         <Link
           href={getPageLink(currentGroupEnd + 1)}
           className={baseLinkClasses}
-          onClick={(e) => handleClick(e, currentGroupEnd + 1)}
         >
           다음
         </Link>
@@ -126,11 +106,6 @@ const Pagination: React.FC<PaginationProps> = ({
         <Link
           href={getPageLink(totalPages)}
           className={`${baseLinkClasses} ${safeCurrentPage === totalPages ? disabledClasses : ''}`}
-          onClick={(e) => {
-            if (safeCurrentPage === totalPages) e.preventDefault();
-            else handleClick(e, totalPages);
-          }}
-          aria-disabled={safeCurrentPage === totalPages}
         >
           끝
         </Link>

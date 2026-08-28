@@ -1,61 +1,23 @@
-'use client';
-
-import { useEffect } from 'react';
-import { usePathname, useRouter, useSearchParams } from 'next/navigation';
-import { POSTS_PER_PAGE } from '@/constants';
+import { getSearchPath } from '@/lib/search';
 import { PostInfo } from '@/types/post';
 import PostList from './PostList';
 
 interface SearchResultsProps {
-  initialPosts: PostInfo[];
+  posts: PostInfo[];
   keyword: string;
   currentPage: number;
-  normalizedHref?: string;
+  totalPages: number;
+  totalResults: number;
 }
 
 const SearchResults = ({
-  initialPosts,
+  posts,
   keyword,
   currentPage,
-  normalizedHref,
+  totalPages,
+  totalResults,
 }: SearchResultsProps) => {
-  const searchParams = useSearchParams();
-  const router = useRouter();
-  const pathname = usePathname();
-
-  const totalPages = Math.ceil(initialPosts.length / POSTS_PER_PAGE);
-  const currentPosts = initialPosts.slice(
-    (currentPage - 1) * POSTS_PER_PAGE,
-    currentPage * POSTS_PER_PAGE
-  );
-
-  useEffect(() => {
-    if (normalizedHref) {
-      router.replace(normalizedHref);
-    }
-  }, [normalizedHref, router]);
-
-  const handlePageChange = (page: number) => {
-    router.push(getSearchPageHref(page));
-  };
-
-  const getSearchPageHref = (page: number) => {
-    const params = new URLSearchParams(searchParams.toString());
-
-    if (keyword) {
-      params.set('keyword', keyword);
-    } else {
-      params.delete('keyword');
-    }
-
-    if (page === 1) {
-      params.delete('page');
-    } else {
-      params.set('page', page.toString());
-    }
-
-    return `${pathname}?${params.toString()}`;
-  };
+  const getSearchPageHref = (page: number) => getSearchPath(keyword, page);
 
   if (!keyword) {
     return (
@@ -73,22 +35,21 @@ const SearchResults = ({
   return (
     <>
       <h1 className='inline-block text-2xl md:text-3xl font-semibold my-4 md:my-8'>
-        <span className='text-secondary dark:text-blue-700'>{`🔍'${keyword}'`}</span>
+        <span className='text-accent dark:text-accent-contrast'>{`🔍'${keyword}'`}</span>
         <span className='text-gray-800 dark:text-gray-200'>
           에 대한 검색 결과
         </span>
         <span className='text-lg md:text-xl ml-1 font-normal text-gray-500'>
-          ({initialPosts.length}개)
+          ({totalResults}개)
         </span>
       </h1>
 
-      {initialPosts.length > 0 ? (
+      {posts.length > 0 ? (
         <PostList
-          posts={currentPosts}
+          posts={posts}
           currentPage={currentPage}
           totalPages={totalPages}
           getPageHref={getSearchPageHref}
-          onPageChange={handlePageChange}
         />
       ) : (
         <div className='py-40 text-center text-gray-500'>

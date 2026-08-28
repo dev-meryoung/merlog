@@ -15,10 +15,9 @@ export interface PostMeta {
   thumbnail: string;
   slug: string;
   blurDataURL: string;
-  summary: string;
 }
 
-export type PostInfo = PostMeta & { content?: string };
+export type PostInfo = PostMeta;
 
 export type PostSearchData = Pick<
   PostInfo,
@@ -31,7 +30,6 @@ export interface PostData {
   postInfo: PostInfo;
   mdxSource: ReactElement<MDXRemoteProps>;
   headings: Heading[];
-  summary: string;
   previousPost?: PostInfo | null;
   nextPost?: PostInfo | null;
 }

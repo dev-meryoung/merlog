@@ -2,7 +2,7 @@
 title: "[블로그 구현기] 기술 스택 선정 및 세팅"
 description: "마크다운 기반의 블로그를 만들기 위해 이런 기술을 사용했습니다."
 date: "2025-03-20"
-thumbnail: "/posts/blog-dev-process-1/0.png"
+thumbnail: "/posts/blog-dev-process-1/0.webp"
 tags: ["블로그", "구현기"]
 ---
 
@@ -26,7 +26,7 @@ tags: ["블로그", "구현기"]
 그러던 중 Commitlint라는 라이브러리를 통해 Commit 컨벤션을 관리하는 방법을 알게 되었고, 이번 블로그 프로젝트는 개인 프로젝트임에도 이후 팀 프로젝트에서 적용할 수 있도록 먼저 경험해보면 좋겠다는 생각으로 사용하게 되었다.
 기본적으로 아래와 같은 Rule 설정을 통해 Keyword 및 설명에 대한 Commit 규칙을 정할 수 있다.
 
-![Commitlint 규칙](/posts/blog-dev-process-1/1.png)
+![Commitlint 규칙](/posts/blog-dev-process-1/1.webp)
 
 물론, Commitlint만 단독으로 사용할 경우에는 단순히 검사기의 역할만 하기 때문에, 아래에서 설명할 Git Hook 관리 도구인 Lefthook 혹은 Husky와 함께 써야 규칙을 강제할 수 있다. 개인적으로는 협업 과정에서 Commit 메시지를 직관적이고
 통일성 있게 작성하는 것을 중요하다고 생각하기에, 일관된 규칙을 강제할 수 있다는 점이 흥미로웠다. 
@@ -44,7 +44,7 @@ tags: ["블로그", "구현기"]
 React 기반의 풀스택 웹 프레임워크로, 이번 프로젝트에서는 SSG(Static Site Generation), SEO 최적화, 이미지 최적화, App Router 등의 기능을 주로 사용했다. Next.js를 프로젝트에 적용해보는 것은 거의 처음이나 다름없기 때문에, 여러 시행착오를
 겪었다. 그럼에도 프로젝트를 구현하는 과정 내내 단순한 라우팅부터 상황에 따른 렌더링 처리, 최적화 등 굉장히 프론트엔드 개발 편의성을 높여준다는 느낌을 받았다.
 
-![Lighthouse 점수](/posts/blog-dev-process-1/2.png)
+![Lighthouse 점수](/posts/blog-dev-process-1/2.webp)
 
 위 사진은 현재 블로그의 Lighthouse 점수인데, 굉장히 높은 점수를 유지하고 있다. 아마 React로 같은 점수를 만들기 위해서는 추가적인 최적화 작업을 필요로 했을 것이다. 앞으로의 프로젝트에서도 더 경험해 봐야겠지만, 대부분의 웹 프로젝트에서
 Next.js가 React 단독 사용보다 더 좋은 선택지가 될 수 있겠다는 생각이 들었다.
@@ -59,7 +59,7 @@ IDE 자동 완성 기능이 결합해 생산성과 유지보수성 향상에 도
 개인적으로 지금까지의 프로젝트에서는 Emotion(CSS in JS)과 같은 컴포넌트 단위 스타일 작성 방식을 선호해왔다. Tailwind CSS는 이전에 아주 짧게 사용해본 적이 있는데, 매번 공식 문서를 찾아가며 스타일을 작성하는 과정이 굉장히 불편하고 직관적이지 않다고 느껴, 이후 프로젝트에서는
 사용하지 않았다. 그러던 중 Create Next App을 이용해 이번 블로그 프로젝트를 세팅하는 과정에서 Tailwind CSS의 사용 여부를 묻는 질문을 확인하게 되었다.
 
-![Create Next App과 Tailwind CSS](/posts/blog-dev-process-1/3.png)
+![Create Next App과 Tailwind CSS](/posts/blog-dev-process-1/3.webp)
 
 Create Next App에서 직접 Tailwind CSS 사용 여부를 확인한다는 점이 굉장히 흥미로웠다. 제대로 경험해보지 못한 상태에서 내가 갖고 있는 선입견을 없앨 좋은 기회가 될 것 같아 Tailwind CSS를 사용했을 때의 이점을 찾아보기 시작했다.
 우선, 반응형과 다크모드 지원, 빠른 UI 개발과 같은 장점이 있다는 것을 확인할 수 있었는데, 반응형과 다크모드 모두 이번 블로그 프로젝트에서 필요한 기능이었기에 적용해보고 싶다는 생각이 들었다.

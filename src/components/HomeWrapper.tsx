@@ -1,5 +1,3 @@
-'use client';
-
 import { PostInfo } from '@/types/post';
 import PostList from './PostList';
 import TagList from './TagList';
@@ -22,6 +20,9 @@ const HomeWrapper: React.FC<HomeWrapperProps> = ({
   basePath,
 }) => (
   <div className='w-full'>
+    <h1 className='sr-only'>
+      {selectedTag ? `${selectedTag} 태그 포스트` : 'merlog 포스트 목록'}
+    </h1>
     <TagList allTags={allTags} selectedTag={selectedTag} />
     <PostList
       posts={posts}

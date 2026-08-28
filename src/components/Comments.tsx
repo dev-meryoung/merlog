@@ -25,7 +25,7 @@ const Comments = () => {
 
       script.id = 'giscus-script';
       script.src = 'https://giscus.app/client.js';
-      script.setAttribute('data-repo', 'dev-meryoung/mer-log');
+      script.setAttribute('data-repo', 'dev-meryoung/merlog');
       script.setAttribute('data-repo-id', 'R_kgDON6ue9Q');
       script.setAttribute('data-category', 'Comments');
       script.setAttribute('data-category-id', 'DIC_kwDON6ue9c4CnYFV');

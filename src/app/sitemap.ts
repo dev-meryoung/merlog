@@ -1,5 +1,6 @@
 import type { MetadataRoute } from 'next';
 import { getAllPosts, getAllTags } from '@/lib/posts';
+import { getTagPagePath } from '@/lib/routing';
 import { toSameOriginUrl } from '@/lib/url';
 import { getTotalPages } from '@/utils/paginationUtils';
 
@@ -33,20 +34,19 @@ const sitemap = async (): Promise<MetadataRoute.Sitemap> => {
   });
 
   tags.forEach((tag) => {
-    const encodedTag = encodeURIComponent(tag);
     const filteredPostCount = posts.filter((post) =>
       post.tags.includes(tag)
     ).length;
     const totalTagPages = getTotalPages(filteredPostCount);
 
     urls.push({
-      url: toSameOriginUrl(`/tags/${encodedTag}`),
+      url: toSameOriginUrl(getTagPagePath(tag, 1)),
       lastModified: latestPostDate,
     });
 
     for (let page = 2; page <= totalTagPages; page++) {
       urls.push({
-        url: toSameOriginUrl(`/tags/${encodedTag}/page/${page}`),
+        url: toSameOriginUrl(getTagPagePath(tag, page)),
         lastModified: latestPostDate,
       });
     }

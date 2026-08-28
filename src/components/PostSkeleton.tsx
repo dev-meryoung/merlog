@@ -1,5 +1,10 @@
 const PostSkeleton = () => (
-  <div className='w-full mx-auto p-5 md:p-10 rounded-lg bg-white shadow-md dark:bg-darkActive animate-pulse'>
+  <div
+    role='status'
+    aria-busy='true'
+    aria-label='포스트를 불러오는 중'
+    className='w-full mx-auto p-5 md:p-10 rounded-lg bg-white shadow-md dark:bg-darkActive motion-safe:animate-pulse'
+  >
     <div className='relative'>
       {/* IndexNavigation Skeleton */}
       <nav className='hidden min-[1620px]:block absolute left-[968px] top-0 h-full'>
@@ -34,7 +39,7 @@ const PostSkeleton = () => (
       <div className='w-full aspect-video bg-gray-200 dark:bg-gray-600 rounded-lg mb-8' />
 
       {/* Content lines */}
-      <div className='space-y-4'>
+      <div className='space-y-4' aria-hidden='true'>
         <div className='h-4 bg-gray-200 dark:bg-gray-600 rounded w-full' />
         <div className='h-4 bg-gray-200 dark:bg-gray-600 rounded w-[95%]' />
         <div className='h-4 bg-gray-200 dark:bg-gray-600 rounded w-[90%]' />

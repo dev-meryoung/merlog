@@ -1,11 +1,33 @@
+export const dynamicParams = true;
+
+import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import HomeWrapper from '@/components/HomeWrapper';
+import { defaultMetadata } from '@/lib/metadata';
 import { getAllPosts, getAllTags } from '@/lib/posts';
+import { getTagPath, normalizeTagParam } from '@/lib/routing';
 import { getPaginatedPosts, getTotalPages } from '@/utils/paginationUtils';
 
 interface PageProps {
   params: Promise<{ tag: string }>;
 }
+
+export const generateMetadata = async ({
+  params,
+}: PageProps): Promise<Metadata> => {
+  const rawTag = (await params).tag;
+  const tag = normalizeTagParam(rawTag);
+
+  if (tag === null) {
+    notFound();
+  }
+
+  return defaultMetadata({
+    description: `${tag} 태그가 포함된 merlog 포스트 목록`,
+    keywords: [tag],
+    url: getTagPath(tag),
+  });
+};
 
 export async function generateStaticParams() {
   const allPosts = await getAllPosts();
@@ -17,13 +39,16 @@ export async function generateStaticParams() {
 }
 
 const Page = async ({ params }: PageProps) => {
-  const { tag } = await params;
-  const decodedTag = decodeURIComponent(tag);
+  const rawTag = (await params).tag;
+  const tag = normalizeTagParam(rawTag);
+
+  if (tag === null) {
+    notFound();
+  }
+
   const allPosts = await getAllPosts();
 
-  const filteredPosts = allPosts.filter((post) =>
-    post.tags.includes(decodedTag)
-  );
+  const filteredPosts = allPosts.filter((post) => post.tags.includes(tag));
 
   if (filteredPosts.length === 0) {
     notFound();
@@ -39,8 +64,8 @@ const Page = async ({ params }: PageProps) => {
       allTags={allTags}
       totalPages={totalPages}
       currentPage={1}
-      selectedTag={decodedTag}
-      basePath={`/tags/${tag}`}
+      selectedTag={tag}
+      basePath={getTagPath(tag)}
     />
   );
 };

@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { getTagPath } from '@/lib/routing';
 
 interface TagProps {
   label: string;
@@ -7,7 +8,7 @@ interface TagProps {
 }
 
 const Tag: React.FC<TagProps> = ({ label, isActive = false, size = 'md' }) => {
-  const href = isActive ? '/' : `/tags/${label}`;
+  const href = isActive ? '/' : getTagPath(label);
 
   const sizeClasses =
     size === 'sm'
@@ -19,9 +20,10 @@ const Tag: React.FC<TagProps> = ({ label, isActive = false, size = 'md' }) => {
       href={href}
       className={`flex justify-center items-center gap-1 rounded-3xl ${sizeClasses} ${
         isActive
-          ? 'bg-secondary text-text-dark dark:bg-blue-700'
+          ? 'bg-accent text-text-dark dark:bg-accent-contrastSurface dark:text-text-dark'
           : 'bg-gray-200 dark:bg-gray-600 dark:text-text-dark'
       }`}
+      aria-current={isActive ? 'page' : undefined}
     >
       {label}
     </Link>
