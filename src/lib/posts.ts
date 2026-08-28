@@ -3,7 +3,7 @@ import path from 'path';
 import { cache } from 'react';
 import type { PostInfo, PostSearchData } from '@/types/post';
 
-const DATA_DIR = path.join(process.cwd(), 'public', 'data');
+const DATA_DIR = path.join(process.cwd(), '.cache', 'merlog');
 const POST_CACHE_PATH = path.join(DATA_DIR, 'post-cache.json');
 const SEARCH_INDEX_PATH = path.join(DATA_DIR, 'search-index.json');
 
@@ -18,16 +18,8 @@ const isPostInfo = (value: unknown): value is PostInfo => {
     return false;
   }
 
-  const {
-    title,
-    description,
-    date,
-    tags,
-    thumbnail,
-    slug,
-    blurDataURL,
-    summary,
-  } = value;
+  const { title, description, date, tags, thumbnail, slug, blurDataURL } =
+    value;
 
   return (
     typeof title === 'string' &&
@@ -36,8 +28,7 @@ const isPostInfo = (value: unknown): value is PostInfo => {
     isStringArray(tags) &&
     typeof thumbnail === 'string' &&
     typeof slug === 'string' &&
-    typeof blurDataURL === 'string' &&
-    typeof summary === 'string'
+    typeof blurDataURL === 'string'
   );
 };
 
@@ -91,6 +82,13 @@ export const getAllSearchPosts = cache(async (): Promise<PostSearchData[]> => {
   );
   return posts;
 });
+
+export const getPostInfo = cache(
+  async (slug: string): Promise<PostInfo | undefined> => {
+    const posts = await getAllPosts();
+    return posts.find((post) => post.slug === slug);
+  }
+);
 
 export const getAllTags = (posts: PostInfo[]): string[] => {
   const tagFrequency = new Map<string, number>();

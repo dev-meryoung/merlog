@@ -1,5 +1,7 @@
+import path from 'node:path';
 import Image from 'next/image';
-import { generateBlurDataForImage, getImageSize } from '@/lib/images';
+import { getImageData } from '@/lib/images';
+import { resolvePostImage } from '@/lib/post-images';
 
 interface MDXImageProps {
   src: string;
@@ -8,27 +10,43 @@ interface MDXImageProps {
   height?: number;
 }
 
-const MDXImage = async ({ src, alt = 'image' }: MDXImageProps) => {
-  const [imageBlur, imageSize] = await Promise.all([
-    generateBlurDataForImage(src),
-    getImageSize(src),
-  ]);
+const POSTS_DIR = path.join(process.cwd(), 'public', 'posts');
+
+const MDXImage = async ({
+  src,
+  alt = 'image',
+  slug,
+}: MDXImageProps & { slug: string }) => {
+  const { publicSource } = resolvePostImage({
+    postsDir: POSTS_DIR,
+    slug,
+    source: src,
+  });
+  const { width, height, blurDataURL } = await getImageData(publicSource);
 
   return (
     <Image
-      src={src}
+      src={publicSource}
       alt={alt}
-      width={imageSize.width}
-      height={imageSize.height}
+      width={width}
+      height={height}
+      sizes='(max-width: 800px) calc(100vw - 72px), 720px'
       className='max-w-full h-auto object-cover rounded-lg'
       placeholder='blur'
-      blurDataURL={imageBlur}
+      blurDataURL={blurDataURL}
     />
   );
 };
 
-const MDXComponents = {
-  img: MDXImage,
+const createMDXComponents = (slug: string) => {
+  const PostImage = (props: MDXImageProps) => (
+    <MDXImage {...props} slug={slug} />
+  );
+
+  return {
+    img: PostImage,
+    Image: PostImage,
+  };
 };
 
-export default MDXComponents;
+export default createMDXComponents;

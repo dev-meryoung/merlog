@@ -40,5 +40,6 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
-# /public/data/
-/public/data/
+# generated post data
+/.cache/merlog/
+/public/generated-post-images/

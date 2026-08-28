@@ -29,6 +29,12 @@ jobs:
           cache: npm
           cache-dependency-path: package-lock.json
 
+      - name: Use project npm version
+        run: |
+          corepack enable
+          corepack install
+          npm --version
+
       - name: Install dependencies
         run: npm ci
 

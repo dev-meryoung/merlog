@@ -1,11 +1,12 @@
 export const dynamicParams = false;
 
 import { Metadata } from 'next';
+import { notFound } from 'next/navigation';
 import JsonLd from '@/components/JsonLd';
 import PostWrapper from '@/components/PostWrapper';
 import { getPost } from '@/lib/mdx';
 import { defaultMetadata } from '@/lib/metadata';
-import { getAllPosts } from '@/lib/posts';
+import { getAllPosts, getPostInfo } from '@/lib/posts';
 import { toSameOriginUrl } from '@/lib/url';
 
 interface PostPageProps {
@@ -16,16 +17,22 @@ export const generateMetadata = async ({
   params,
 }: PostPageProps): Promise<Metadata> => {
   const { slug } = await params;
-  const post = await getPost(slug);
-  const { postInfo, summary } = post;
+  const postInfo = await getPostInfo(slug);
+
+  if (!postInfo) {
+    notFound();
+  }
+
   const postURL = toSameOriginUrl(`/post/${slug}`);
 
   return defaultMetadata({
     title: postInfo.title,
-    description: summary,
+    description: postInfo.description,
     keywords: postInfo.tags,
     image: postInfo.thumbnail,
     url: postURL,
+    openGraphType: 'article',
+    publishedTime: new Date(postInfo.date).toISOString(),
   });
 };
 

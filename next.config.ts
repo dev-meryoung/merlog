@@ -4,6 +4,9 @@ const nextConfig: NextConfig = {
   images: {
     formats: ['image/avif', 'image/webp'],
   },
+  outputFileTracingIncludes: {
+    '/*': ['./.cache/merlog/**/*'],
+  },
 };
 
 export default nextConfig;

@@ -1,29 +1,11 @@
-import { dirname } from 'path';
-import { fileURLToPath } from 'url';
-import { FlatCompat } from '@eslint/eslintrc';
+import { defineConfig, globalIgnores } from 'eslint/config';
+import nextVitals from 'eslint-config-next/core-web-vitals';
+import nextTypescript from 'eslint-config-next/typescript';
 import eslintPluginPrettier from 'eslint-plugin-prettier';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
-
-const compat = new FlatCompat({
-  baseDirectory: __dirname,
-});
-
-const eslintConfig = [
-  ...compat.extends('next/core-web-vitals', 'next/typescript'),
-
-  {
-    ignores: [
-      'node_modules',
-      'public',
-      'build',
-      'dist',
-      '.next',
-      'next-env.d.ts',
-    ],
-  },
-
+const eslintConfig = defineConfig([
+  ...nextVitals,
+  ...nextTypescript,
   {
     files: ['**/*.{js,jsx,ts,tsx,d.ts}'],
     plugins: {
@@ -49,7 +31,10 @@ const eslintConfig = [
         },
       ],
       'react/jsx-pascal-case': 'error',
-      'react/jsx-handler-names': ['error', { eventHandlerPropPrefix: 'handle' }],
+      'react/jsx-handler-names': [
+        'error',
+        { eventHandlerPropPrefix: 'handle' },
+      ],
       'react/jsx-no-duplicate-props': ['error', { ignoreCase: true }],
       'react/jsx-key': ['error', { checkFragmentShorthand: true }],
       'react/prop-types': 'off',
@@ -60,30 +45,6 @@ const eslintConfig = [
       'import/no-default-export': 'off',
       'import/prefer-default-export': 'off',
       'import/no-unresolved': 'off',
-      'import/order': [
-        'error',
-        {
-          groups: ['builtin', 'external', 'internal', 'index'],
-          pathGroups: [
-            {
-              pattern: 'react',
-              group: 'external',
-              position: 'before',
-            },
-            {
-              pattern: '@/**',
-              group: 'internal',
-            },
-          ],
-          pathGroupsExcludedImportTypes: ['react'],
-          'newlines-between': 'never',
-          alphabetize: {
-            order: 'asc',
-            caseInsensitive: true,
-          },
-        },
-      ],
-
       '@typescript-eslint/no-unused-vars': [
         'warn',
         {
@@ -97,6 +58,15 @@ const eslintConfig = [
       '@typescript-eslint/explicit-module-boundary-types': 'off',
     },
   },
-];
+  globalIgnores([
+    'node_modules/**',
+    'public/**',
+    'build/**',
+    'dist/**',
+    '.next/**',
+    '.cache/**',
+    'next-env.d.ts',
+  ]),
+]);
 
 export default eslintConfig;

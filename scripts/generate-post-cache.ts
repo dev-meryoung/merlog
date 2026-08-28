@@ -1,16 +1,24 @@
+import { createHash } from 'crypto';
 import fsPromises from 'fs/promises';
 import path from 'path';
 import pLimit from 'p-limit';
 import { getPlaiceholder } from 'plaiceholder';
 import { remark } from 'remark';
+import sharp from 'sharp';
 import strip from 'strip-markdown';
 import { parseMdxFrontmatter } from '@/lib/frontmatter';
+import { MAX_IMAGE_SIZE_BYTES, resolvePostImage } from '@/lib/post-images';
 import type { PostMeta, PostSearchData } from '@/types/post';
 
 type CachedPost = PostMeta & {
-  __mtime?: string;
-  __content?: string;
-  __thumbnailMtime?: string;
+  __sourceHash: string;
+  __content: string;
+  __thumbnailHash: string;
+};
+
+type InternalCache = {
+  version: number;
+  posts: CachedPost[];
 };
 
 type PostFrontmatter = {
@@ -22,19 +30,12 @@ type PostFrontmatter = {
 };
 
 const POSTS_DIR = path.join(process.cwd(), 'public', 'posts');
-const DATA_DIR = path.join(process.cwd(), 'public', 'data');
+const DATA_DIR = path.join(process.cwd(), '.cache', 'merlog');
 const CACHE_FILE_PATH = path.join(DATA_DIR, 'post-cache.json');
 const SEARCH_INDEX_PATH = path.join(DATA_DIR, 'search-index.json');
+const INTERNAL_CACHE_PATH = path.join(DATA_DIR, 'internal-cache.json');
+const CACHE_VERSION = 2;
 const CONCURRENCY_LIMIT = 10;
-const DEFAULT_THUMBNAIL = '/images/thumbnail.png';
-const PUBLIC_DIR = path.resolve(process.cwd(), 'public');
-const ALLOWED_IMAGE_EXTENSIONS = new Set([
-  '.avif',
-  '.jpeg',
-  '.jpg',
-  '.png',
-  '.webp',
-]);
 const POST_SLUG_PATTERN = /^[a-z0-9-]+$/;
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
@@ -59,7 +60,9 @@ const isCachedPost = (value: unknown): value is CachedPost => {
     thumbnail,
     slug,
     blurDataURL,
-    summary,
+    __sourceHash,
+    __content,
+    __thumbnailHash,
   } = value;
 
   return (
@@ -70,28 +73,10 @@ const isCachedPost = (value: unknown): value is CachedPost => {
     isNonEmptyString(thumbnail) &&
     isNonEmptyString(slug) &&
     typeof blurDataURL === 'string' &&
-    isNonEmptyString(summary)
+    isNonEmptyString(__sourceHash) &&
+    typeof __content === 'string' &&
+    isNonEmptyString(__thumbnailHash)
   );
-};
-
-const resolvePublicImagePath = (publicPath: string): string => {
-  if (!publicPath.startsWith('/')) {
-    throw new Error(`Image path must start with "/": ${publicPath}`);
-  }
-
-  const resolvedPath = path.resolve(PUBLIC_DIR, `.${publicPath}`);
-  const relativePath = path.relative(PUBLIC_DIR, resolvedPath);
-  const extension = path.extname(resolvedPath).toLowerCase();
-
-  if (relativePath.startsWith('..') || path.isAbsolute(relativePath)) {
-    throw new Error(`Image path must stay inside public/: ${publicPath}`);
-  }
-
-  if (!ALLOWED_IMAGE_EXTENSIONS.has(extension)) {
-    throw new Error(`Unsupported image extension: ${publicPath}`);
-  }
-
-  return resolvedPath;
 };
 
 const normalizeText = (text: string): string =>
@@ -105,18 +90,8 @@ const assertValidPostSlug = (slug: string): void => {
   }
 };
 
-const getFileMtime = async (filePath: string): Promise<string> => {
-  const stats = await fsPromises.stat(filePath);
-  return stats.mtime.toISOString();
-};
-
-const getThumbnailMtime = async (thumbnail: string): Promise<string> => {
-  try {
-    return await getFileMtime(resolvePublicImagePath(thumbnail));
-  } catch {
-    throw new Error(`Thumbnail not found or invalid: ${thumbnail}`);
-  }
-};
+const createContentHash = (value: string | Buffer): string =>
+  createHash('sha256').update(value).digest('hex');
 
 const normalizeFrontmatter = (
   folderName: string,
@@ -152,33 +127,92 @@ const normalizeFrontmatter = (
     );
   }
 
+  if (!isNonEmptyString(thumbnail)) {
+    throw new Error(
+      `${folderName}: frontmatter.thumbnail must be a non-empty local image path`
+    );
+  }
+
   return {
     title: title.trim(),
     description: description.trim(),
-    date,
-    tags: tags || [],
-    thumbnail: isNonEmptyString(thumbnail) ? thumbnail : DEFAULT_THUMBNAIL,
+    date: date.trim(),
+    tags: Array.from(new Set((tags || []).map((tag) => tag.trim()))),
+    thumbnail: thumbnail.trim(),
   };
 };
 
-async function generateBlurDataForImage(imagePath: string): Promise<string> {
-  const fullPath = resolvePublicImagePath(imagePath);
+const readAndValidateThumbnail = async (
+  folderName: string,
+  thumbnail: string
+): Promise<{ path: string; buffer: Buffer; publicSource: string }> => {
+  let thumbnailPath: string;
+  let publicSource: string;
 
   try {
-    const fileBuffer = await fsPromises.readFile(fullPath);
-    const { base64 } = await getPlaiceholder(fileBuffer, { size: 32 });
-    return base64;
-  } catch {
-    const defaultPath = resolvePublicImagePath(DEFAULT_THUMBNAIL);
-    try {
-      const fileBuffer = await fsPromises.readFile(defaultPath);
-      const { base64 } = await getPlaiceholder(fileBuffer, { size: 32 });
-      return base64;
-    } catch {
-      return '';
-    }
+    ({ outputFilePath: thumbnailPath, publicSource } = resolvePostImage({
+      postsDir: POSTS_DIR,
+      slug: folderName,
+      source: thumbnail,
+    }));
+  } catch (error) {
+    throw new Error(
+      `${folderName}: invalid thumbnail "${thumbnail}": ${
+        error instanceof Error ? error.message : String(error)
+      }`
+    );
   }
-}
+
+  let thumbnailBuffer: Buffer;
+  try {
+    const thumbnailLinkStat = await fsPromises.lstat(thumbnailPath);
+
+    if (thumbnailLinkStat.isSymbolicLink()) {
+      throw new Error('symbolic links are not allowed');
+    }
+
+    thumbnailBuffer = await fsPromises.readFile(thumbnailPath);
+  } catch (error) {
+    if (
+      error instanceof Error &&
+      error.message === 'symbolic links are not allowed'
+    ) {
+      throw new Error(
+        `${folderName}: thumbnail must be a regular local file: ${thumbnail}`
+      );
+    }
+
+    throw new Error(
+      `${folderName}: thumbnail file does not exist: ${thumbnail}`
+    );
+  }
+
+  if (thumbnailBuffer.byteLength > MAX_IMAGE_SIZE_BYTES) {
+    throw new Error(
+      `${folderName}: thumbnail exceeds the 3MiB limit: ${thumbnail}`
+    );
+  }
+
+  try {
+    const metadata = await sharp(thumbnailBuffer).metadata();
+
+    if (metadata.format !== 'webp') {
+      throw new Error(
+        `${folderName}: thumbnail content must be WebP: ${thumbnail}`
+      );
+    }
+  } catch (error) {
+    if (error instanceof Error && error.message.includes('thumbnail content')) {
+      throw error;
+    }
+
+    throw new Error(
+      `${folderName}: thumbnail is not a readable WebP image: ${thumbnail}`
+    );
+  }
+
+  return { path: thumbnailPath, buffer: thumbnailBuffer, publicSource };
+};
 
 async function processPost(
   folderName: string,
@@ -194,23 +228,26 @@ async function processPost(
   }
 
   const filePath = path.join(itemPath, 'index.mdx');
-  const fileStats = await fsPromises.stat(filePath);
-  const mtime = fileStats.mtime.toISOString();
   const cachedPost = existingCache[folderName];
   const fileContents = await fsPromises.readFile(filePath, 'utf8');
+  const sourceHash = createContentHash(fileContents);
   const { data, content } = parseMdxFrontmatter(fileContents);
-  const { title, description, date, tags, thumbnail } = normalizeFrontmatter(
-    folderName,
-    data
-  );
-  const thumbnailMtime = await getThumbnailMtime(thumbnail);
+  const {
+    title,
+    description,
+    date,
+    tags,
+    thumbnail: thumbnailReference,
+  } = normalizeFrontmatter(folderName, data);
+  const { buffer: thumbnailBuffer, publicSource: thumbnail } =
+    await readAndValidateThumbnail(folderName, thumbnailReference);
+  const thumbnailHash = createContentHash(thumbnailBuffer);
 
   if (
     cachedPost &&
-    cachedPost.__mtime === mtime &&
-    cachedPost.__content &&
+    cachedPost.__sourceHash === sourceHash &&
     cachedPost.thumbnail === thumbnail &&
-    cachedPost.__thumbnailMtime === thumbnailMtime
+    cachedPost.__thumbnailHash === thumbnailHash
   ) {
     return {
       ...cachedPost,
@@ -226,17 +263,13 @@ async function processPost(
     cachedPost &&
     cachedPost.blurDataURL &&
     cachedPost.thumbnail === thumbnail &&
-    cachedPost.__thumbnailMtime === thumbnailMtime
+    cachedPost.__thumbnailHash === thumbnailHash
   ) {
     ({ blurDataURL } = cachedPost);
   } else {
-    blurDataURL = await generateBlurDataForImage(thumbnail);
+    const { base64 } = await getPlaiceholder(thumbnailBuffer, { size: 32 });
+    blurDataURL = base64;
   }
-
-  const normalizedText = normalizeText(plainText);
-  const summary = normalizedText
-    ? `${normalizedText.slice(0, 150)}...`
-    : description;
 
   return {
     title,
@@ -246,30 +279,36 @@ async function processPost(
     thumbnail,
     slug: folderName,
     blurDataURL,
-    summary,
-    __mtime: mtime,
-    __content: plainText,
-    __thumbnailMtime: thumbnailMtime,
+    __sourceHash: sourceHash,
+    __content: normalizeText(plainText),
+    __thumbnailHash: thumbnailHash,
   };
 }
 
 async function readExistingCache(): Promise<Record<string, CachedPost>> {
   try {
     const cached = JSON.parse(
-      await fsPromises.readFile(CACHE_FILE_PATH, 'utf8')
-    );
+      await fsPromises.readFile(INTERNAL_CACHE_PATH, 'utf8')
+    ) as unknown;
 
-    if (!Array.isArray(cached)) {
+    if (
+      !isRecord(cached) ||
+      cached.version !== CACHE_VERSION ||
+      !Array.isArray(cached.posts)
+    ) {
       return {};
     }
 
-    return cached.reduce<Record<string, CachedPost>>((accumulator, item) => {
-      if (isCachedPost(item)) {
-        accumulator[item.slug] = item;
-      }
+    return cached.posts.reduce<Record<string, CachedPost>>(
+      (accumulator, item) => {
+        if (isCachedPost(item)) {
+          accumulator[item.slug] = item;
+        }
 
-      return accumulator;
-    }, {});
+        return accumulator;
+      },
+      {}
+    );
   } catch {
     return {};
   }
@@ -334,10 +373,8 @@ async function main() {
     tags: post.tags,
     slug: post.slug,
     date: post.date,
-    content: normalizeText(post.__content || ''),
+    content: post.__content,
   }));
-
-  await writeJsonFile(SEARCH_INDEX_PATH, searchIndex);
 
   const listCache = validPosts.map((post) => ({
     title: post.title,
@@ -347,13 +384,18 @@ async function main() {
     thumbnail: post.thumbnail,
     slug: post.slug,
     blurDataURL: post.blurDataURL,
-    summary: post.summary,
-    __mtime: post.__mtime,
-    __content: post.__content,
-    __thumbnailMtime: post.__thumbnailMtime,
   }));
 
-  await writeJsonFile(CACHE_FILE_PATH, listCache);
+  const internalCache: InternalCache = {
+    version: CACHE_VERSION,
+    posts: validPosts,
+  };
+
+  await Promise.all([
+    writeJsonFile(CACHE_FILE_PATH, listCache),
+    writeJsonFile(SEARCH_INDEX_PATH, searchIndex),
+    writeJsonFile(INTERNAL_CACHE_PATH, internalCache),
+  ]);
 }
 
 main().catch((error) => {

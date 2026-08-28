@@ -30,6 +30,9 @@ interface DefaultMetadataProps {
   keywords?: string[];
   image?: string;
   url?: string;
+  openGraphType?: 'website' | 'article';
+  publishedTime?: string;
+  robots?: Metadata['robots'];
 }
 
 export const defaultMetadata = ({
@@ -38,6 +41,9 @@ export const defaultMetadata = ({
   keywords = [],
   image = DEFAULT_IMAGE.url,
   url = SITE_CONFIG.url,
+  openGraphType = 'website',
+  publishedTime,
+  robots = 'index, follow',
 }: DefaultMetadataProps): Metadata => {
   const canonicalUrl = toAbsoluteUrl(url);
   const imageUrl = image ? toAbsoluteUrl(image) : DEFAULT_IMAGE.url;
@@ -47,13 +53,16 @@ export const defaultMetadata = ({
     description,
     keywords: [...DEFAULT_KEYWORDS, ...keywords],
     openGraph: {
-      type: 'website',
+      type: openGraphType,
       locale: 'ko_KR',
       title,
       description,
       url: canonicalUrl,
       siteName: SITE_CONFIG.title,
       images: [{ ...DEFAULT_IMAGE, url: imageUrl }],
+      ...(openGraphType === 'article' && publishedTime
+        ? { publishedTime }
+        : {}),
     },
     twitter: {
       card: 'summary_large_image',
@@ -61,7 +70,7 @@ export const defaultMetadata = ({
       description,
       images: [imageUrl],
     },
-    robots: 'index, follow',
+    robots,
     alternates: {
       canonical: canonicalUrl,
     },

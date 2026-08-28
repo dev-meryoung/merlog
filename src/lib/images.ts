@@ -1,64 +1,44 @@
-import fs from 'fs';
+import fs from 'fs/promises';
 import path from 'path';
-import imageSize from 'image-size';
 import { getPlaiceholder } from 'plaiceholder';
+import sharp from 'sharp';
 
 const DEFAULT_IMAGE_WIDTH = 1280;
 const DEFAULT_IMAGE_HEIGHT = 720;
 
-const computeDimensions = (buffer: Buffer) => {
-  const dimensions = imageSize(buffer);
+const PUBLIC_DIR = path.resolve(process.cwd(), 'public');
+
+const loadImageBuffer = async (src: string): Promise<Buffer> => {
+  if (src.startsWith('/') && !src.startsWith('//')) {
+    const fullPath = path.resolve(PUBLIC_DIR, `.${src}`);
+    const relativePath = path.relative(PUBLIC_DIR, fullPath);
+
+    if (relativePath.startsWith('..') || path.isAbsolute(relativePath)) {
+      throw new Error(`Image path must stay inside public/: ${src}`);
+    }
+
+    return fs.readFile(fullPath);
+  }
+
+  const response = await fetch(src);
+
+  if (!response.ok) {
+    throw new Error(`Failed to load image: ${src}`);
+  }
+
+  return Buffer.from(await response.arrayBuffer());
+};
+
+export const getImageData = async (src: string) => {
+  const buffer = await loadImageBuffer(src);
+  const [metadata, { base64 }] = await Promise.all([
+    sharp(buffer).metadata(),
+    getPlaiceholder(buffer, { size: 64 }),
+  ]);
 
   return {
-    width: dimensions.width || DEFAULT_IMAGE_WIDTH,
-    height: dimensions.height || DEFAULT_IMAGE_HEIGHT,
+    width: metadata.width || DEFAULT_IMAGE_WIDTH,
+    height: metadata.height || DEFAULT_IMAGE_HEIGHT,
+    blurDataURL: base64,
   };
-};
-
-export const getImageSize = async (src: string) => {
-  let buffer: Buffer;
-
-  if (src.startsWith('/')) {
-    const fullPath = path.join(process.cwd(), 'public', src);
-
-    if (!fs.existsSync(fullPath)) {
-      throw new Error(fullPath);
-    }
-
-    buffer = fs.readFileSync(fullPath);
-  } else {
-    const response = await fetch(src);
-
-    if (!response.ok) {
-      throw new Error(src);
-    }
-
-    buffer = Buffer.from(await response.arrayBuffer());
-  }
-
-  return computeDimensions(buffer);
-};
-
-export const generateBlurDataForImage = async (imagePath: string) => {
-  const fullPath = path.join(process.cwd(), 'public', imagePath);
-
-  if (!fs.existsSync(fullPath)) {
-    throw new Error(fullPath);
-  }
-
-  const fileBuffer = fs.readFileSync(fullPath);
-  const { base64 } = await getPlaiceholder(fileBuffer, { size: 64 });
-
-  return base64;
-};
-
-export const getThumbnailAndBlur = async (
-  thumbnail: unknown,
-  defaultThumbnail: string = '/images/thumbnail.png'
-) => {
-  const isValid = typeof thumbnail === 'string' && thumbnail.trim() !== '';
-  const thumbnailURL = isValid ? thumbnail : defaultThumbnail;
-  const blurDataURL = await generateBlurDataForImage(thumbnailURL);
-
-  return { thumbnailURL, blurDataURL };
 };
