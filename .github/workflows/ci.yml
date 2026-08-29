@@ -38,5 +38,22 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Validate pull request title
+        if: github.event_name == 'pull_request'
+        env:
+          PR_TITLE: ${{ github.event.pull_request.title }}
+        run: |
+          node -e '
+            const title = process.env.PR_TITLE ?? "";
+            const pattern = /^\[(Feat|Docs|Config|Design|Style|Refactor|Test|Chore|Fix|HotFix|Build|CI|Perf)\] \S(?:.*\S)?$/u;
+
+            if (!pattern.test(title)) {
+              console.error(
+                "PR 제목은 \"[Type] 설명\" 형식이어야 합니다. 예: [Refactor] 콘텐츠 처리 및 검증 로직 개선 작업"
+              );
+              process.exit(1);
+            }
+          '
+
       - name: Run checks
         run: npm run check
