@@ -17,12 +17,7 @@ const DEFAULT_KEYWORDS = [
   'merlog',
 ];
 
-const DEFAULT_IMAGE = {
-  url: toSameOriginUrl(SITE_CONFIG.image),
-  width: 1200,
-  height: 630,
-  alt: 'thumbnail',
-};
+const DEFAULT_IMAGE_URL = toSameOriginUrl(SITE_CONFIG.image);
 
 interface DefaultMetadataProps {
   title?: string;
@@ -39,14 +34,18 @@ export const defaultMetadata = ({
   title = SITE_CONFIG.title,
   description = SITE_CONFIG.description,
   keywords = [],
-  image = DEFAULT_IMAGE.url,
+  image = DEFAULT_IMAGE_URL,
   url = SITE_CONFIG.url,
   openGraphType = 'website',
   publishedTime,
   robots = 'index, follow',
 }: DefaultMetadataProps): Metadata => {
   const canonicalUrl = toAbsoluteUrl(url);
-  const imageUrl = image ? toAbsoluteUrl(image) : DEFAULT_IMAGE.url;
+  const imageUrl = image ? toAbsoluteUrl(image) : DEFAULT_IMAGE_URL;
+  const socialImage = {
+    url: imageUrl,
+    alt: `${title} 대표 이미지`,
+  };
 
   return {
     title,
@@ -59,7 +58,7 @@ export const defaultMetadata = ({
       description,
       url: canonicalUrl,
       siteName: SITE_CONFIG.title,
-      images: [{ ...DEFAULT_IMAGE, url: imageUrl }],
+      images: [socialImage],
       ...(openGraphType === 'article' && publishedTime
         ? { publishedTime }
         : {}),
@@ -68,7 +67,7 @@ export const defaultMetadata = ({
       card: 'summary_large_image',
       title,
       description,
-      images: [imageUrl],
+      images: [socialImage],
     },
     robots,
     alternates: {

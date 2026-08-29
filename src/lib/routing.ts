@@ -31,6 +31,23 @@ export const normalizeTagParam = (value: string | undefined): string | null => {
   }
 };
 
+export const isRoutableTag = (tag: string): boolean => {
+  if (
+    tag === '' ||
+    tag !== tag.normalize('NFC') ||
+    tag === '.' ||
+    tag === '..'
+  ) {
+    return false;
+  }
+
+  try {
+    return normalizeTagParam(encodeURIComponent(tag)) === tag;
+  } catch {
+    return false;
+  }
+};
+
 export const parsePageParam = (
   value: string | string[] | undefined,
   minimum = 1

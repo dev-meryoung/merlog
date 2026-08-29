@@ -21,14 +21,14 @@ const HeadingList = ({
   nodes,
   onSelect,
 }: HeadingListProps) => (
-  <ul className={depth === 0 ? 'space-y-2' : 'mt-2 ml-1 space-y-2'}>
+  <ul className={depth === 0 ? 'space-y-3' : 'mt-3 ml-2 space-y-3'}>
     {nodes.map((node) => (
       <li
         key={node.id}
         className={
           depth === 0
             ? undefined
-            : 'relative pl-4 before:absolute before:left-0 before:-top-2 before:-bottom-2 before:border-l before:border-gray-300 last:before:bottom-auto last:before:h-[18px] after:absolute after:left-0 after:top-2.5 after:w-3 after:border-t after:border-gray-300 dark:before:border-gray-600 dark:after:border-gray-600'
+            : 'relative pl-4 before:absolute before:left-0 before:-top-3 before:-bottom-3 before:border-l before:border-gray-300 last:before:bottom-auto last:before:h-[calc(1.375rem+1px)] last:before:w-3 last:before:border-b after:absolute after:left-0 after:top-2.5 after:w-3 after:border-t after:border-gray-300 last:after:hidden dark:before:border-gray-600 dark:after:border-gray-600'
         }
       >
         <button

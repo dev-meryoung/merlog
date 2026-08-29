@@ -28,7 +28,6 @@ const Header = () => {
               width={150}
               height={100}
               className='w-[150px] h-[100px] block dark:hidden'
-              priority
             />
             <Image
               src='/images/logo-dark.svg'
@@ -36,7 +35,6 @@ const Header = () => {
               width={150}
               height={100}
               className='w-[150px] h-[100px] hidden dark:block'
-              priority
             />
           </Link>
           <div className='flex space-x-2'>

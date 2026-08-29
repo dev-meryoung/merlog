@@ -117,7 +117,6 @@ const SearchModal: React.FC<SearchModalProps> = ({ isModalOpen, onClose }) => {
             height={100}
             className='w-[150px] h-[50px] block dark:hidden'
             draggable={false}
-            priority
           />
           <Image
             src='/images/logo-dark.svg'
@@ -126,7 +125,6 @@ const SearchModal: React.FC<SearchModalProps> = ({ isModalOpen, onClose }) => {
             height={100}
             className='w-[150px] h-[50px] hidden dark:block'
             draggable={false}
-            priority
           />
           <button
             type='button'

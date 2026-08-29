@@ -3,6 +3,7 @@ import { describe, it } from 'node:test';
 import {
   getTagPagePath,
   getTagPath,
+  isRoutableTag,
   normalizeTagParam,
   parsePageParam,
 } from '@/lib/routing';
@@ -35,5 +36,15 @@ describe('routing utilities', () => {
     assert.equal(normalizeTagParam('%25'), null);
     assert.equal(normalizeTagParam('%25EB%B8%94%EB%A1%9C%EA%B7%B8'), null);
     assert.equal(normalizeTagParam('%E0%A4%A'), null);
+  });
+
+  it('accepts only tags that round-trip through one route segment', () => {
+    assert.equal(isRoutableTag('Next.js'), true);
+    assert.equal(isRoutableTag('프론트엔드'), true);
+    assert.equal(isRoutableTag('블로그'.normalize('NFD')), false);
+
+    for (const tag of ['', '.', '..', 'CI/CD', '100%', 'path\\tag']) {
+      assert.equal(isRoutableTag(tag), false, tag);
+    }
   });
 });

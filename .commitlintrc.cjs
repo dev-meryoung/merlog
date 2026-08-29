@@ -20,17 +20,17 @@ module.exports = {
   plugins: [
     {
       rules: {
-        'subject-has-issue': ({ subject }) => {
+        'subject-has-reference': ({ subject }) => {
           if (!subject) {
             return [false, '커밋 메시지의 설명이 없습니다.'];
           }
 
-          const issuePattern = / #[1-9]\d*$/;
+          const referencePattern = / #(?:0|[1-9]\d*)$/;
 
-          if (!issuePattern.test(subject.trim())) {
+          if (!referencePattern.test(subject.trim())) {
             return [
               false,
-              '커밋 메시지 끝에 "#이슈번호"를 적어야 합니다. 예: feat: 포스트 검색 구현 #7',
+              '커밋 메시지 끝에 "#참조번호"를 적어야 합니다. 예: feat: 포스트 검색 구현 #7 또는 docs: 새 포스트 작성 #0',
             ];
           }
 
@@ -45,7 +45,7 @@ module.exports = {
     'type-case': [2, 'always', 'lower-case'],
     'scope-empty': [2, 'always'],
     'subject-empty': [2, 'never'],
-    'subject-has-issue': [2, 'always'],
+    'subject-has-reference': [2, 'always'],
     'subject-case': [0],
   },
 };

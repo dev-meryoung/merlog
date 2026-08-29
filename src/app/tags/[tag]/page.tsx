@@ -1,4 +1,4 @@
-export const dynamicParams = true;
+export const dynamicParams = false;
 
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';

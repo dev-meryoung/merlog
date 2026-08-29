@@ -121,30 +121,77 @@ describe('post image policy', () => {
     assert.equal(isMeaninglessImageAlt('Commitlint rule'), false);
   });
 
-  it('extracts Markdown and MDX image references but ignores fenced examples', () => {
+  it('extracts inline, reference-style, and MDX image nodes', () => {
     const references = extractPostImageReferences(
       [
+        '![Markdown alt](/posts/blog-init/1.webp "Screenshot")',
         '',
-        '![Markdown alt](/posts/blog-init/1.webp)',
+        '![Reference alt][diagram]',
         '',
-        '<Image src="./0.webp" alt="Thumbnail illustration" />',
+        '[diagram]: ./reference.webp "Reference diagram"',
         '',
-        '```md',
-        '![not an image](https://example.com/ignored.webp)',
-        '```',
+        '<img src="./inline.webp" alt="Inline illustration" />',
+        '',
+        "<Image src={'./component.webp'} alt={'Component illustration'} />",
       ].join('\n')
     );
 
     assert.deepEqual(
-      references.map(({ kind, source, alt }) => ({ kind, source, alt })),
+      references.map(({ kind, source, alt, line }) => ({
+        kind,
+        source,
+        alt,
+        line,
+      })),
       [
         {
           kind: 'markdown',
           source: '/posts/blog-init/1.webp',
           alt: 'Markdown alt',
+          line: 1,
         },
-        { kind: 'mdx', source: './0.webp', alt: 'Thumbnail illustration' },
+        {
+          kind: 'markdown',
+          source: './reference.webp',
+          alt: 'Reference alt',
+          line: 3,
+        },
+        {
+          kind: 'mdx',
+          source: './inline.webp',
+          alt: 'Inline illustration',
+          line: 7,
+        },
+        {
+          kind: 'mdx',
+          source: './component.webp',
+          alt: 'Component illustration',
+          line: 9,
+        },
       ]
     );
+  });
+
+  it('ignores code, comments, escaped images, and fenced examples', () => {
+    const references = extractPostImageReferences(
+      [
+        '`![inline code](./inline-code.webp)`',
+        '',
+        '<!-- ![HTML comment](./comment.webp) -->',
+        '',
+        '<!-- <Image src="./comment-component.webp" alt="Comment" /> -->',
+        '',
+        '{/* <img src="./jsx-comment.webp" alt="JSX comment" /> */}',
+        '',
+        '\\![escaped image](./escaped.webp)',
+        '',
+        '```mdx',
+        '![fenced image](./fenced.webp)',
+        '<Image src="./fenced-component.webp" alt="Fenced" />',
+        '```',
+      ].join('\n')
+    );
+
+    assert.deepEqual(references, []);
   });
 });

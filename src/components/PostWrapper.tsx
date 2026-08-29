@@ -32,9 +32,12 @@ const PostWrapper = ({
           <h1 className='text-2xl md:text-3xl lg:text-4xl font-bold mb-4 pl-0.5 dark:text-text-dark'>
             {postInfo.title}
           </h1>
-          <p className='text-sm md:text-[16px] text-gray-600 dark:text-gray-400 mb-4 pl-1'>
+          <time
+            dateTime={postInfo.date}
+            className='block text-sm md:text-[16px] text-gray-600 dark:text-gray-400 mb-4 pl-1'
+          >
             {formatDate(postInfo.date)}
-          </p>
+          </time>
           <ul className='pb-4 mb-4 border-b border-gray-200 dark:border-text-light'>
             {postInfo.tags.map((tag) => (
               <li key={tag} className='inline-block leading-9 mr-2'>
@@ -46,7 +49,7 @@ const PostWrapper = ({
         <div className='relative w-full rounded-lg overflow-hidden aspect-video mb-8'>
           <Image
             src={postInfo.thumbnail || '/images/thumbnail.png'}
-            alt={postInfo.title}
+            alt=''
             className='w-full h-full object-cover'
             width={1280}
             height={720}
@@ -54,7 +57,7 @@ const PostWrapper = ({
             quality={POST_IMAGE_QUALITY}
             placeholder='blur'
             blurDataURL={postInfo.blurDataURL}
-            priority
+            preload
           />
         </div>
         <div className='prose dark:prose-dark max-w-none'>{mdxSource}</div>
