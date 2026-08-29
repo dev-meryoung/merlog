@@ -25,7 +25,7 @@ const PostList: React.FC<PostListProps> = ({
       <div className='flex py-4 gap-8 flex-wrap'>
         {posts.map((post, index) => (
           <div key={post.slug} className='w-full'>
-            <PostCard post={post} priority={index < 2} />
+            <PostCard post={post} preload={index === 0} />
           </div>
         ))}
       </div>

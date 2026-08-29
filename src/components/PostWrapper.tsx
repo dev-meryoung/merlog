@@ -54,7 +54,7 @@ const PostWrapper = ({
             quality={POST_IMAGE_QUALITY}
             placeholder='blur'
             blurDataURL={postInfo.blurDataURL}
-            priority
+            preload
           />
         </div>
         <div className='prose dark:prose-dark max-w-none'>{mdxSource}</div>

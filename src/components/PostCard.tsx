@@ -5,10 +5,10 @@ import { formatDate } from '@/utils/dateUtils';
 
 interface PostCardProps {
   post: PostInfo;
-  priority?: boolean;
+  preload?: boolean;
 }
 
-const PostCard: React.FC<PostCardProps> = ({ post, priority = false }) => {
+const PostCard: React.FC<PostCardProps> = ({ post, preload = false }) => {
   const { title, description, thumbnail, blurDataURL, date, slug } = post;
 
   return (
@@ -23,10 +23,10 @@ const PostCard: React.FC<PostCardProps> = ({ post, priority = false }) => {
           className='w-full h-full object-cover transition-all duration-300 group-hover:scale-105'
           width={400}
           height={225}
-          sizes='(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw'
+          sizes='(max-width: 767px) calc(100vw - 2rem), (max-width: 799px) calc(33.333vw - 0.667rem), (max-width: 1023px) 255px, 330px'
           placeholder='blur'
           blurDataURL={blurDataURL}
-          priority={priority}
+          preload={preload}
         />
       </div>
       <div className='relative flex flex-col w-full min-h-[164px] p-4 md:min-h-[188px] md:w-2/3 md:px-8 md:py-6 gap-2 flex-grow'>
