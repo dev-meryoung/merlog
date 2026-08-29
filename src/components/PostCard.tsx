@@ -19,7 +19,7 @@ const PostCard: React.FC<PostCardProps> = ({ post, preload = false }) => {
       <div className='relative w-full md:w-1/3 aspect-video overflow-hidden'>
         <Image
           src={thumbnail}
-          alt={title}
+          alt=''
           className='w-full h-full object-cover transition-all duration-300 group-hover:scale-105'
           width={400}
           height={225}
@@ -36,9 +36,12 @@ const PostCard: React.FC<PostCardProps> = ({ post, preload = false }) => {
         <p className='line-clamp-2 text-sm md:text-[16px] text-gray-600 dark:text-gray-300 relative z-0'>
           {description}
         </p>
-        <p className='mt-auto text-xs md:text-sm text-gray-600 dark:text-gray-400 relative z-0'>
+        <time
+          dateTime={date}
+          className='mt-auto text-xs md:text-sm text-gray-600 dark:text-gray-400 relative z-0'
+        >
           {formatDate(date)}
-        </p>
+        </time>
       </div>
     </Link>
   );

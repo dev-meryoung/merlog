@@ -23,7 +23,11 @@ const Tag: React.FC<TagProps> = ({ label, isActive = false, size = 'md' }) => {
           ? 'bg-accent text-text-dark dark:bg-accent-contrastSurface dark:text-text-dark'
           : 'bg-gray-200 dark:bg-gray-600 dark:text-text-dark'
       }`}
-      aria-current={isActive ? 'page' : undefined}
+      aria-label={
+        isActive
+          ? `${label} 태그 선택됨, 전체 포스트 보기`
+          : `${label} 태그 포스트 보기`
+      }
     >
       {label}
     </Link>

@@ -34,20 +34,26 @@ const sitemap = async (): Promise<MetadataRoute.Sitemap> => {
   });
 
   tags.forEach((tag) => {
-    const filteredPostCount = posts.filter((post) =>
-      post.tags.includes(tag)
-    ).length;
-    const totalTagPages = getTotalPages(filteredPostCount);
+    const filteredPosts = posts.filter((post) => post.tags.includes(tag));
+    const latestTagPostDate = filteredPosts.reduce<Date | undefined>(
+      (latestDate, post) => {
+        const postDate = new Date(post.date);
+
+        return !latestDate || postDate > latestDate ? postDate : latestDate;
+      },
+      undefined
+    );
+    const totalTagPages = getTotalPages(filteredPosts.length);
 
     urls.push({
       url: toSameOriginUrl(getTagPagePath(tag, 1)),
-      lastModified: latestPostDate,
+      lastModified: latestTagPostDate,
     });
 
     for (let page = 2; page <= totalTagPages; page++) {
       urls.push({
         url: toSameOriginUrl(getTagPagePath(tag, page)),
-        lastModified: latestPostDate,
+        lastModified: latestTagPostDate,
       });
     }
   });
