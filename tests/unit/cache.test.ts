@@ -2,6 +2,8 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import { describe, it } from 'node:test';
+import { isValidPostDate } from '@/lib/frontmatter';
+import { isRoutableTag } from '@/lib/routing';
 
 const CACHE_DIR = path.join(process.cwd(), '.cache', 'merlog');
 
@@ -14,7 +16,7 @@ describe('generated post cache', () => {
       await fs.readFile(path.join(CACHE_DIR, 'internal-cache.json'), 'utf8')
     ) as { version: number; posts: Array<Record<string, unknown>> };
 
-    assert.equal(internalCache.version, 2);
+    assert.equal(internalCache.version, 1);
     assert.ok(listCache.length > 0);
     assert.ok(internalCache.posts.length > 0);
 
@@ -28,6 +30,15 @@ describe('generated post cache', () => {
         'thumbnail',
         'title',
       ]);
+
+      assert.equal(isValidPostDate(post.date), true);
+      assert.equal(Array.isArray(post.tags), true);
+
+      (post.tags as unknown[]).forEach((tag) => {
+        assert.equal(typeof tag, 'string');
+        assert.equal(tag, (tag as string).normalize('NFC'));
+        assert.equal(isRoutableTag(tag as string), true);
+      });
     });
 
     assert.equal(

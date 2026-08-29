@@ -6,7 +6,10 @@ import { getPlaiceholder } from 'plaiceholder';
 import { remark } from 'remark';
 import sharp from 'sharp';
 import strip from 'strip-markdown';
-import { parseMdxFrontmatter } from '@/lib/frontmatter';
+import {
+  normalizePostFrontmatter,
+  parseMdxFrontmatter,
+} from '@/lib/frontmatter';
 import { MAX_IMAGE_SIZE_BYTES, resolvePostImage } from '@/lib/post-images';
 import type { PostMeta, PostSearchData } from '@/types/post';
 
@@ -21,20 +24,12 @@ type InternalCache = {
   posts: CachedPost[];
 };
 
-type PostFrontmatter = {
-  title: string;
-  description: string;
-  date: string;
-  tags: string[];
-  thumbnail: string;
-};
-
 const POSTS_DIR = path.join(process.cwd(), 'public', 'posts');
 const DATA_DIR = path.join(process.cwd(), '.cache', 'merlog');
 const CACHE_FILE_PATH = path.join(DATA_DIR, 'post-cache.json');
 const SEARCH_INDEX_PATH = path.join(DATA_DIR, 'search-index.json');
 const INTERNAL_CACHE_PATH = path.join(DATA_DIR, 'internal-cache.json');
-const CACHE_VERSION = 2;
+const CACHE_VERSION = 1;
 const CONCURRENCY_LIMIT = 10;
 const POST_SLUG_PATTERN = /^[a-z0-9-]+$/;
 
@@ -92,55 +87,6 @@ const assertValidPostSlug = (slug: string): void => {
 
 const createContentHash = (value: string | Buffer): string =>
   createHash('sha256').update(value).digest('hex');
-
-const normalizeFrontmatter = (
-  folderName: string,
-  data: unknown
-): PostFrontmatter => {
-  if (!isRecord(data)) {
-    throw new Error(`${folderName}: frontmatter must be an object`);
-  }
-
-  const { title, description, date, thumbnail, tags } = data;
-
-  if (!isNonEmptyString(title)) {
-    throw new Error(
-      `${folderName}: frontmatter.title must be a non-empty string`
-    );
-  }
-
-  if (!isNonEmptyString(description)) {
-    throw new Error(
-      `${folderName}: frontmatter.description must be a non-empty string`
-    );
-  }
-
-  if (!isNonEmptyString(date) || Number.isNaN(new Date(date).getTime())) {
-    throw new Error(
-      `${folderName}: frontmatter.date must be a valid date string`
-    );
-  }
-
-  if (tags !== undefined && !isStringArray(tags)) {
-    throw new Error(
-      `${folderName}: frontmatter.tags must be an array of strings`
-    );
-  }
-
-  if (!isNonEmptyString(thumbnail)) {
-    throw new Error(
-      `${folderName}: frontmatter.thumbnail must be a non-empty local image path`
-    );
-  }
-
-  return {
-    title: title.trim(),
-    description: description.trim(),
-    date: date.trim(),
-    tags: Array.from(new Set((tags || []).map((tag) => tag.trim()))),
-    thumbnail: thumbnail.trim(),
-  };
-};
 
 const readAndValidateThumbnail = async (
   folderName: string,
@@ -238,7 +184,7 @@ async function processPost(
     date,
     tags,
     thumbnail: thumbnailReference,
-  } = normalizeFrontmatter(folderName, data);
+  } = normalizePostFrontmatter(folderName, data);
   const { buffer: thumbnailBuffer, publicSource: thumbnail } =
     await readAndValidateThumbnail(folderName, thumbnailReference);
   const thumbnailHash = createContentHash(thumbnailBuffer);
