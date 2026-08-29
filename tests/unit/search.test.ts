@@ -25,11 +25,18 @@ describe('search utilities', () => {
       page: 1,
       redirectTo: '/search?keyword=Next.js',
     });
+    assert.deepEqual(parseSearchRequest({ keyword: '  Next.js\n\t블로그  ' }), {
+      keyword: 'Next.js 블로그',
+      page: 1,
+      redirectTo: '/search?keyword=Next.js+%EB%B8%94%EB%A1%9C%EA%B7%B8',
+    });
   });
 
   it('matches titles, descriptions, tags, and body content', () => {
     assert.equal(matchesSearchKeyword(post, 'next.JS'), true);
     assert.equal(matchesSearchKeyword(post, '서버 컴포넌트'), true);
+    assert.equal(matchesSearchKeyword(post, '서버  \n  컴포넌트'), true);
+    assert.equal(matchesSearchKeyword(post, '블로그'.normalize('NFD')), true);
     assert.equal(matchesSearchKeyword(post, '없는 검색어'), false);
   });
 });

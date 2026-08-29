@@ -15,6 +15,12 @@ const getFirstValue = (
   value: string | string[] | undefined
 ): string | undefined => (Array.isArray(value) ? value[0] : value);
 
+const normalizeSearchKeyword = (value: string): string =>
+  value.normalize('NFC').replace(/\s+/g, ' ').trim();
+
+export const normalizeSearchText = (value: string): string =>
+  normalizeSearchKeyword(value).toLocaleLowerCase('ko-KR');
+
 export const getSearchPath = (keyword: string, page = 1): string => {
   const params = new URLSearchParams();
 
@@ -32,7 +38,7 @@ export const getSearchPath = (keyword: string, page = 1): string => {
 
 export const parseSearchRequest = (query: SearchQuery): SearchRequest => {
   const rawKeyword = getFirstValue(query.keyword);
-  const keyword = rawKeyword?.trim() || '';
+  const keyword = rawKeyword ? normalizeSearchKeyword(rawKeyword) : '';
 
   if (!keyword) {
     const shouldRedirect =
@@ -66,7 +72,7 @@ export const matchesSearchKeyword = (
   post: PostSearchData,
   keyword: string
 ): boolean => {
-  const normalizedKeyword = keyword.toLocaleLowerCase('ko-KR');
+  const normalizedKeyword = normalizeSearchText(keyword);
   const searchableValues = [
     post.title,
     post.description,
@@ -75,6 +81,6 @@ export const matchesSearchKeyword = (
   ];
 
   return searchableValues.some((value) =>
-    value.toLocaleLowerCase('ko-KR').includes(normalizedKeyword)
+    normalizeSearchText(value).includes(normalizedKeyword)
   );
 };

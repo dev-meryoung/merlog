@@ -1,4 +1,8 @@
 import path from 'node:path';
+import type { Definition, Html, Image, ImageReference, Root } from 'mdast';
+import { remark } from 'remark';
+import remarkMdx from 'remark-mdx';
+import { visit } from 'unist-util-visit';
 
 export const REQUIRED_IMAGE_EXTENSION = '.webp';
 export const MAX_IMAGE_SIZE_BYTES = 3 * 1024 * 1024;
@@ -73,117 +77,181 @@ const toUrlPath = (filePath: string): string =>
 const replaceExtension = (filePath: string, extension: string): string =>
   `${filePath.slice(0, -path.extname(filePath).length)}${extension}`;
 
-const getLineNumber = (source: string, offset: number): number =>
-  source.slice(0, offset).split('\n').length;
-
-const stripFencedCodeBlocks = (source: string): string => {
-  const lines = source.split('\n');
-  let inFence = false;
-  let fenceMarker = '';
-
-  return lines
-    .map((line) => {
-      const fenceMatch = line.match(/^\s{0,3}(`{3,}|~{3,})/);
-
-      if (fenceMatch) {
-        if (!inFence) {
-          inFence = true;
-          fenceMarker = fenceMatch[1][0];
-        } else if (fenceMatch[1][0] === fenceMarker) {
-          inFence = false;
-          fenceMarker = '';
-        }
-
-        return '';
-      }
-
-      return inFence ? '' : line;
-    })
-    .join('\n');
-};
-
-const extractMarkdownReferences = (source: string): PostImageReference[] => {
-  const references: PostImageReference[] = [];
-  const addReference = (
-    kind: 'markdown',
-    alt: string,
-    imageSource: string,
-    offset: number
-  ) => {
-    references.push({
-      kind,
-      source: imageSource.trim(),
-      alt,
-      line: getLineNumber(source, offset),
-    });
+type MdxAttributeValueExpression = {
+  type: 'mdxJsxAttributeValueExpression';
+  data?: {
+    estree?: {
+      body?: Array<{
+        type?: string;
+        expression?: {
+          type?: string;
+          value?: unknown;
+          expressions?: unknown[];
+          quasis?: Array<{
+            value?: { cooked?: string | null; raw?: string };
+          }>;
+        };
+      }>;
+    } | null;
   };
-
-  const inlinePattern = /!\[([^\]]*)\]\(\s*(?:<([^>\n]+)>|([^\s)]+))[^)]*\)/g;
-  let match: RegExpExecArray | null;
-
-  while ((match = inlinePattern.exec(source)) !== null) {
-    addReference('markdown', match[1], match[2] ?? match[3] ?? '', match.index);
-  }
-
-  const definitions = new Map<string, { source: string; offset: number }>();
-  const definitionPattern = /^\s{0,3}\[([^\]]+)\]:\s*(?:<([^>\n]+)>|(\S+))/gm;
-
-  while ((match = definitionPattern.exec(source)) !== null) {
-    definitions.set(match[1].trim().toLowerCase(), {
-      source: match[2] ?? match[3] ?? '',
-      offset: match.index,
-    });
-  }
-
-  const referencePattern = /!\[([^\]]*)\]\s*\[([^\]]*)\]/g;
-
-  while ((match = referencePattern.exec(source)) !== null) {
-    const referenceName = (match[2] || match[1]).trim().toLowerCase();
-    const definition = definitions.get(referenceName);
-
-    if (definition) {
-      addReference('markdown', match[1], definition.source, match.index);
-    } else {
-      addReference('markdown', match[1], '', match.index);
-    }
-  }
-
-  return references;
 };
 
-const extractMdxReferences = (source: string): PostImageReference[] => {
-  const references: PostImageReference[] = [];
-  const imageTagPattern = /<(?:img|Image)\b[^>]*>/gi;
-  const sourcePattern =
-    /\bsrc\s*=\s*(?:"([^"]*)"|'([^']*)'|\{\s*["']([^"']*)["']\s*\})/i;
-  const altPattern =
-    /\balt\s*=\s*(?:"([^"]*)"|'([^']*)'|\{\s*["']([^"']*)["']\s*\})/i;
-  let match: RegExpExecArray | null;
+type MdxAttribute = {
+  type: string;
+  name?: string;
+  value?: string | null | MdxAttributeValueExpression;
+};
 
-  while ((match = imageTagPattern.exec(source)) !== null) {
-    const sourceMatch = match[0].match(sourcePattern);
-    const altMatch = match[0].match(altPattern);
+type MdxImageElement = {
+  type: 'mdxJsxFlowElement' | 'mdxJsxTextElement';
+  name?: string | null;
+  attributes?: MdxAttribute[];
+  position?: {
+    start: { line?: number };
+  };
+};
 
-    references.push({
-      kind: 'mdx',
-      source: sourceMatch?.[1] ?? sourceMatch?.[2] ?? sourceMatch?.[3] ?? '',
-      alt: altMatch?.[1] ?? altMatch?.[2] ?? altMatch?.[3] ?? '',
-      line: getLineNumber(source, match.index),
-    });
+const markdownParser = remark();
+const mdxParser = remark().use(remarkMdx);
+
+const getNodeLine = (node: {
+  position?: { start: { line?: number } };
+}): number => node.position?.start.line ?? 1;
+
+const maskHtmlComments = (source: string): string => {
+  const markdownTree = markdownParser.parse(source) as Root;
+  const maskedSource = source.split('');
+
+  visit(markdownTree, 'html', (node: Html) => {
+    if (!node.value.trimStart().startsWith('<!--')) {
+      return;
+    }
+
+    const start = node.position?.start.offset;
+    const end = node.position?.end.offset;
+
+    if (start === undefined || end === undefined) {
+      return;
+    }
+
+    for (let index = start; index < end; index += 1) {
+      if (maskedSource[index] !== '\n' && maskedSource[index] !== '\r') {
+        maskedSource[index] = ' ';
+      }
+    }
+  });
+
+  return maskedSource.join('');
+};
+
+const getExpressionString = (
+  expressionValue: MdxAttributeValueExpression
+): string => {
+  const body = expressionValue.data?.estree?.body;
+
+  if (body?.length !== 1 || body[0].type !== 'ExpressionStatement') {
+    return '';
   }
 
-  return references;
+  const { expression } = body[0];
+
+  if (expression?.type === 'Literal' && typeof expression.value === 'string') {
+    return expression.value;
+  }
+
+  if (
+    expression?.type === 'TemplateLiteral' &&
+    expression.expressions?.length === 0 &&
+    expression.quasis?.length === 1
+  ) {
+    return (
+      expression.quasis[0].value?.cooked ??
+      expression.quasis[0].value?.raw ??
+      ''
+    );
+  }
+
+  return '';
+};
+
+const getMdxAttribute = (
+  node: MdxImageElement,
+  attributeName: 'src' | 'alt'
+): string => {
+  const attribute = node.attributes?.find(
+    (candidate) =>
+      candidate.type === 'mdxJsxAttribute' && candidate.name === attributeName
+  );
+
+  if (typeof attribute?.value === 'string') {
+    return attribute.value;
+  }
+
+  if (attribute?.value?.type === 'mdxJsxAttributeValueExpression') {
+    return getExpressionString(attribute.value);
+  }
+
+  return '';
 };
 
 export const extractPostImageReferences = (
   source: string
 ): PostImageReference[] => {
-  const body = stripFencedCodeBlocks(source);
+  const tree = mdxParser.parse(maskHtmlComments(source)) as Root;
+  const definitions = new Map<string, Definition>();
+  const references: PostImageReference[] = [];
 
-  return [
-    ...extractMarkdownReferences(body),
-    ...extractMdxReferences(body),
-  ].sort((a, b) => a.line - b.line);
+  visit(tree, 'definition', (node: Definition) => {
+    if (!definitions.has(node.identifier)) {
+      definitions.set(node.identifier, node);
+    }
+  });
+
+  visit(tree, (node) => {
+    if (node.type === 'image') {
+      const image = node as Image;
+
+      references.push({
+        kind: 'markdown',
+        source: image.url.trim(),
+        alt: image.alt ?? '',
+        line: getNodeLine(image),
+      });
+      return;
+    }
+
+    if (node.type === 'imageReference') {
+      const image = node as ImageReference;
+
+      references.push({
+        kind: 'markdown',
+        source: definitions.get(image.identifier)?.url.trim() ?? '',
+        alt: image.alt ?? '',
+        line: getNodeLine(image),
+      });
+      return;
+    }
+
+    if (
+      node.type === 'mdxJsxFlowElement' ||
+      node.type === 'mdxJsxTextElement'
+    ) {
+      const image = node as MdxImageElement;
+
+      if (image.name !== 'img' && image.name !== 'Image') {
+        return;
+      }
+
+      references.push({
+        kind: 'mdx',
+        source: getMdxAttribute(image, 'src').trim(),
+        alt: getMdxAttribute(image, 'alt'),
+        line: getNodeLine(image),
+      });
+    }
+  });
+
+  return references.sort((a, b) => a.line - b.line);
 };
 
 export const isMeaninglessImageAlt = (alt: string | undefined): boolean => {
